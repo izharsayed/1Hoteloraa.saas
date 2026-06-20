@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as menuController from './menu.controller';
-import { authenticate } from '../../middleware/auth.middleware';
+import { authenticate, checkPermission } from '../../middleware/auth.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import {
   createMenuCategorySchema,
@@ -13,17 +13,17 @@ const router = Router();
 
 router.use(authenticate);
 
-// Categories
-router.get('/categories', menuController.getCategories);
-router.post('/categories', validate(createMenuCategorySchema), menuController.createCategory);
-router.put('/categories/:id', validate(updateMenuCategorySchema), menuController.updateCategory);
-router.delete('/categories/:id', menuController.deleteCategory);
+// Menu Categories
+router.get('/categories',     checkPermission('MENU', 'READ'),   menuController.getCategories);
+router.post('/categories',    checkPermission('MENU', 'CREATE'), validate(createMenuCategorySchema), menuController.createCategory);
+router.put('/categories/:id', checkPermission('MENU', 'UPDATE'), validate(updateMenuCategorySchema), menuController.updateCategory);
+router.delete('/categories/:id', checkPermission('MENU', 'DELETE'), menuController.deleteCategory);
 
-// Items
-router.get('/items', menuController.getMenuItems);
-router.get('/items/:id', menuController.getMenuItemById);
-router.post('/items', validate(createMenuItemSchema), menuController.createMenuItem);
-router.put('/items/:id', validate(updateMenuItemSchema), menuController.updateMenuItem);
-router.delete('/items/:id', menuController.deleteMenuItem);
+// Menu Items
+router.get('/items',     checkPermission('MENU', 'READ'),   menuController.getMenuItems);
+router.get('/items/:id', checkPermission('MENU', 'READ'),   menuController.getMenuItemById);
+router.post('/items',    checkPermission('MENU', 'CREATE'), validate(createMenuItemSchema), menuController.createMenuItem);
+router.put('/items/:id', checkPermission('MENU', 'UPDATE'), validate(updateMenuItemSchema), menuController.updateMenuItem);
+router.delete('/items/:id', checkPermission('MENU', 'DELETE'), menuController.deleteMenuItem);
 
 export default router;

@@ -1,16 +1,29 @@
 const API_BASE_URL = 'http://localhost:5000/api/v1';
 
-// Helper to resolve tenant slug from email domain
+/**
+ * Resolve the tenantSlug from an email address.
+ * Maps known email domains to their tenant slugs.
+ */
 export const getTenantSlugFromEmail = (email) => {
   const cleanEmail = email.toLowerCase().trim();
-  if (cleanEmail === 'superadmin@hoteloraa.com') return 'system';
-  if (cleanEmail.endsWith('@royalpalace.com') || cleanEmail.endsWith('@royalpalace')) return 'royal-palace';
-  if (cleanEmail.endsWith('@cafearoma.com') || cleanEmail.endsWith('@caferoma.com')) return 'cafe-aroma';
-  if (cleanEmail.endsWith('@starlodge.com')) return 'star-lodge';
-  if (cleanEmail.endsWith('@grandoak.com')) return 'grand-oak';
-  
-  // Fallback default
-  return 'system';
+
+  // Super admin — system tenant
+  if (cleanEmail.includes('@hoteloraa.com')) return 'system';
+
+  // Royal Palace Hotel
+  if (cleanEmail.includes('@royalpalace')) return 'royal-palace';
+
+  // Cafe Aroma — note: the DB email uses caferoma.com (no 'a')
+  if (cleanEmail.includes('@cafearoma') || cleanEmail.includes('@caferoma')) return 'cafe-aroma';
+
+  // Star Lodge
+  if (cleanEmail.includes('@starlodge')) return 'star-lodge';
+
+  // Grand Oak Resort
+  if (cleanEmail.includes('@grandoak')) return 'grand-oak';
+
+  // Default fallback — undefined so backend can resolve it by email
+  return undefined;
 };
 
 const getHeaders = () => {
@@ -78,10 +91,14 @@ export const api = {
 
   login: async (email, password) => {
     const tenantSlug = getTenantSlugFromEmail(email);
+    const body = { email, password };
+    if (tenantSlug) {
+      body.tenantSlug = tenantSlug;
+    }
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tenantSlug, email, password }),
+      body: JSON.stringify(body),
     });
     const data = await response.json();
     if (!response.ok) {

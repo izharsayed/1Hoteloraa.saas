@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../../middleware/auth.middleware';
+import { authenticate, checkPermission } from '../../middleware/auth.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import {
   createOrderSchema,
@@ -21,25 +21,12 @@ const router = Router();
 // All routes require authentication
 router.use(authenticate);
 
-// GET /orders?status=PENDING
-router.get('/', getOrders);
-
-// GET /orders/:id
-router.get('/:id', getOrderById);
-
-// POST /orders
-router.post('/', validate(createOrderSchema), createOrder);
-
-// PATCH /orders/:id/status
-router.patch('/:id/status', validate(updateOrderStatusSchema), updateOrderStatus);
-
-// POST /orders/:id/items
-router.post('/:id/items', validate(addItemsSchema), addItemsToOrder);
-
-// PATCH /orders/:id/items/:itemId/void
-router.patch('/:id/items/:itemId/void', voidOrderItem);
-
-// DELETE /orders/:id  (cancel)
-router.delete('/:id', cancelOrder);
+router.get('/',   checkPermission('ORDERS', 'READ'),   getOrders);
+router.get('/:id', checkPermission('ORDERS', 'READ'),  getOrderById);
+router.post('/',  checkPermission('ORDERS', 'CREATE'), validate(createOrderSchema), createOrder);
+router.patch('/:id/status', checkPermission('ORDERS', 'UPDATE'), validate(updateOrderStatusSchema), updateOrderStatus);
+router.post('/:id/items',   checkPermission('ORDERS', 'UPDATE'), validate(addItemsSchema), addItemsToOrder);
+router.patch('/:id/items/:itemId/void', checkPermission('ORDERS', 'UPDATE'), voidOrderItem);
+router.delete('/:id', checkPermission('ORDERS', 'DELETE'), cancelOrder);
 
 export default router;

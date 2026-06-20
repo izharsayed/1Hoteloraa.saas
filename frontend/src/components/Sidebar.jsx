@@ -16,8 +16,15 @@ import {
   TrendingUp,
   Settings,
   LogOut,
-  ShieldAlert
+  ShieldAlert,
+  ClipboardList,
+  ShoppingCart,
+  Truck,
+  Store,
+  UserCog,
+  Shield,
 } from 'lucide-react';
+import { MODULE_ACCESS } from '../utils/permissions';
 
 function Sidebar() {
   const navigate = useNavigate();
@@ -30,60 +37,81 @@ function Sidebar() {
   const businessType = user.businessType || 'HOTEL_RESTAURANT';
   const role = user.userRole;
 
+  // Check if role is allowed for a given module key
+  const can = (moduleKey) => {
+    if (role === 'SUPER_ADMIN' || role === 'TENANT_ADMIN') return true;
+    const allowed = MODULE_ACCESS[moduleKey] || [];
+    return allowed.includes(role);
+  };
+
   const rawNavigation = [
     {
       category: 'General',
       items: [
-        { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-        { name: 'Reports & Analytics', path: '/reports', icon: TrendingUp },
+        { name: 'Dashboard',         path: '/',        icon: LayoutDashboard, module: 'dashboard' },
+        { name: 'Reports & Analytics', path: '/reports', icon: TrendingUp,   module: 'reports' },
       ]
     },
     {
       category: 'Lodging Operations',
+      businessTypes: ['HOTEL', 'HOTEL_RESTAURANT'],
       items: [
-        { name: 'Rooms Directory', path: '/rooms', icon: Bed },
-        { name: 'Reservations', path: '/reservations', icon: CalendarRange },
-        { name: 'Front Desk Check-In', path: '/checkin', icon: UserCheck },
-        { name: 'Folios & Check-Out', path: '/checkout', icon: FileSpreadsheet },
-        { name: 'Housekeeping', path: '/housekeeping', icon: Sparkles },
+        { name: 'Rooms Directory',       path: '/rooms',        icon: Bed,           module: 'rooms' },
+        { name: 'Reservations',          path: '/reservations', icon: CalendarRange,  module: 'reservations' },
+        { name: 'Front Desk Check-In',   path: '/checkin',      icon: UserCheck,      module: 'rooms' },
+        { name: 'Folios & Check-Out',    path: '/checkout',     icon: FileSpreadsheet,module: 'rooms' },
+        { name: 'Housekeeping',          path: '/housekeeping', icon: Sparkles,       module: 'housekeeping' },
+        { name: 'Guests & CRM',          path: '/crm',          icon: Users,          module: 'guests' },
       ]
     },
     {
       category: 'Restaurant & POS',
+      businessTypes: ['RESTAURANT', 'HOTEL_RESTAURANT'],
       items: [
-        { name: 'Table Seating', path: '/tables', icon: UtensilsCrossed },
-        { name: 'Kitchen KOT', path: '/kitchen', icon: ChefHat },
-        { name: 'POS Menu Manager', path: '/menu', icon: BookOpen },
-        { name: 'POS Billing', path: '/billing', icon: Receipt },
+        { name: 'Table Seating',     path: '/tables',   icon: UtensilsCrossed, module: 'tables' },
+        { name: 'Kitchen KOT',       path: '/kitchen',  icon: ChefHat,         module: 'kot' },
+        { name: 'Orders',            path: '/billing',  icon: ClipboardList,   module: 'orders' },
+        { name: 'POS Menu Manager',  path: '/menu',     icon: BookOpen,        module: 'pos' },
+        { name: 'POS Billing',       path: '/pos',      icon: Store,           module: 'pos' },
+      ]
+    },
+    {
+      category: 'Procurement',
+      items: [
+        { name: 'Inventory & Stock', path: '/inventory', icon: PackageSearch, module: 'inventory' },
+        { name: 'Vendors',           path: '/vendors',   icon: Truck,          module: 'vendors' },
+        { name: 'Purchase Orders',   path: '/purchases', icon: ShoppingCart,   module: 'purchases' },
       ]
     },
     {
       category: 'Administration',
       items: [
-        { name: 'Inventory & Stock', path: '/inventory', icon: PackageSearch },
-        { name: 'CRM & Guests', path: '/crm', icon: Users },
-        { name: 'Platform Settings', path: '/settings', icon: Settings, roles: ['TENANT_ADMIN', 'MANAGER'] },
-        { name: 'Manager Control', path: '/manager', icon: UserCheck, roles: ['TENANT_ADMIN', 'MANAGER'] },
-        { name: 'Super Admin Control', path: '/superadmin', icon: ShieldAlert, roles: ['SUPER_ADMIN'] },
+        { name: 'Platform Settings',   path: '/settings',   icon: Settings,     module: 'settings' },
+        { name: 'User Management',     path: '/admin/users', icon: UserCog,      module: 'users' },
+        { name: 'Roles & Permissions', path: '/admin/rbac',  icon: Shield,       module: 'roles' },
+        { name: 'Super Admin Control', path: '/superadmin',  icon: ShieldAlert,  roles: ['SUPER_ADMIN'] },
       ]
     }
   ];
 
   const navigation = rawNavigation
     .filter((group) => {
-      if (group.category === 'Lodging Operations' && businessType === 'RESTAURANT') return false;
-      if (group.category === 'Restaurant & POS' && businessType === 'LODGING') return false;
+      // Filter by business type if specified
+      if (group.businessTypes) {
+        if (!group.businessTypes.includes(businessType)) return false;
+      }
       return true;
     })
-    .map((group) => {
-      return {
-        ...group,
-        items: group.items.filter((item) => {
-          if (item.roles && !item.roles.includes(role)) return false;
-          return true;
-        })
-      };
-    })
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => {
+        // Hard-coded role override (e.g. SUPER_ADMIN link)
+        if (item.roles) return item.roles.includes(role);
+        // Module-based access check
+        if (item.module) return can(item.module);
+        return true;
+      })
+    }))
     .filter((group) => group.items.length > 0);
 
   const handleLogout = () => {

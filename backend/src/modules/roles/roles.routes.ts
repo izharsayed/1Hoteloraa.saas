@@ -7,11 +7,12 @@ import { createRoleSchema, updateRoleSchema } from './roles.dto';
 const router = Router();
 
 router.use(authenticate);
+// Roles management is restricted to TENANT_ADMIN and SUPER_ADMIN only
 router.use(authorize('SUPER_ADMIN', 'TENANT_ADMIN'));
 
-router.get('/', rolesController.getRoles);
+router.get('/',    rolesController.getRoles);
 router.get('/:id', rolesController.getRoleById);
-router.post('/', validate(createRoleSchema), rolesController.createRole);
+router.post('/',   validate(createRoleSchema), rolesController.createRole);
 router.put('/:id', validate(updateRoleSchema), rolesController.updateRole);
 router.delete('/:id', rolesController.deleteRole);
 

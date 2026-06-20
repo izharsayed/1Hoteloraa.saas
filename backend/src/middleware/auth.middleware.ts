@@ -82,8 +82,8 @@ const checkStaticRoleFallback = (role: string, module: string, action: string): 
   const waiterPerms: Record<string, string[]> = {
     MENU: ['READ'],
     ORDERS: ['CREATE', 'READ', 'UPDATE'],
-    KOT: ['READ'],
-    TABLES: ['READ'],
+    KOT: ['CREATE', 'READ', 'UPDATE'],
+    TABLES: ['READ', 'UPDATE'],
   };
 
   const chefPerms: Record<string, string[]> = {
@@ -94,10 +94,11 @@ const checkStaticRoleFallback = (role: string, module: string, action: string): 
 
   const housekeeperPerms: Record<string, string[]> = {
     ROOMS: ['READ'],
-    HOUSEKEEPING: ['READ', 'UPDATE'],
+    HOUSEKEEPING: ['CREATE', 'READ', 'UPDATE'],
   };
 
   const receptionistPerms: Record<string, string[]> = {
+    DASHBOARD: ['READ'],
     ROOMS: ['READ', 'UPDATE'],
     ROOM_TYPES: ['READ'],
     GUESTS: ['CREATE', 'READ', 'UPDATE'],
@@ -109,15 +110,29 @@ const checkStaticRoleFallback = (role: string, module: string, action: string): 
   };
 
   const cashierPerms: Record<string, string[]> = {
+    DASHBOARD: ['READ'],
     MENU: ['READ'],
-    ORDERS: ['READ'],
+    ORDERS: ['CREATE', 'READ', 'UPDATE'],
     BILLING: ['CREATE', 'READ', 'UPDATE'],
     PAYMENTS: ['CREATE', 'READ'],
-    POS: ['READ'],
+    POS: ['CREATE', 'READ', 'UPDATE'],
+  };
+
+  const accountantPerms: Record<string, string[]> = {
+    DASHBOARD: ['READ'],
+    REPORTS: ['READ'],
+    INVENTORY: ['CREATE', 'READ', 'UPDATE', 'DELETE'],
+    VENDORS: ['CREATE', 'READ', 'UPDATE', 'DELETE'],
+    PURCHASES: ['CREATE', 'READ', 'UPDATE', 'DELETE'],
+    BILLING: ['READ'],
+    PAYMENTS: ['READ'],
+    FOLIO: ['READ'],
   };
 
   const managerPerms: Record<string, string[]> = {
     DASHBOARD: ['READ'],
+    SETTINGS: ['READ', 'UPDATE'],
+    REPORTS: ['READ'],
     ROOMS: ['CREATE', 'READ', 'UPDATE', 'DELETE'],
     ROOM_TYPES: ['CREATE', 'READ', 'UPDATE'],
     GUESTS: ['CREATE', 'READ', 'UPDATE', 'DELETE'],
@@ -135,7 +150,7 @@ const checkStaticRoleFallback = (role: string, module: string, action: string): 
     INVENTORY: ['CREATE', 'READ', 'UPDATE', 'DELETE'],
     VENDORS: ['CREATE', 'READ', 'UPDATE', 'DELETE'],
     PURCHASES: ['CREATE', 'READ', 'UPDATE', 'DELETE'],
-    REPORTS: ['READ'],
+    POS: ['CREATE', 'READ', 'UPDATE', 'DELETE'],
     USERS: ['READ'],
   };
 
@@ -146,7 +161,8 @@ const checkStaticRoleFallback = (role: string, module: string, action: string): 
   else if (role === 'HOUSEKEEPING') allowedActions = housekeeperPerms[module] || [];
   else if (role === 'RECEPTIONIST') allowedActions = receptionistPerms[module] || [];
   else if (role === 'CASHIER') allowedActions = cashierPerms[module] || [];
-  else if (role === 'MANAGER' || role === 'ACCOUNTANT') allowedActions = managerPerms[module] || [];
+  else if (role === 'ACCOUNTANT') allowedActions = accountantPerms[module] || [];
+  else if (role === 'MANAGER') allowedActions = managerPerms[module] || [];
 
   return allowedActions.includes(action);
 };

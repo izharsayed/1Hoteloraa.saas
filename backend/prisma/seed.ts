@@ -6,13 +6,35 @@ const SALT_ROUNDS = 12;
 
 async function main() {
   console.log('Clearing existing database...');
+  // Delete in reverse-dependency order to avoid FK constraint errors
   await prisma.auditLog.deleteMany({}).catch(() => {});
-  await prisma.rolePermission.deleteMany({});
-  await prisma.permission.deleteMany({});
-  await prisma.user.deleteMany({});
-  await prisma.subscription.deleteMany({});
-  await prisma.tenantFeature.deleteMany({});
-  await prisma.tenant.deleteMany({});
+  await prisma.rolePermission.deleteMany({}).catch(() => {});
+  await prisma.permission.deleteMany({}).catch(() => {});
+  await prisma.kotItem.deleteMany({}).catch(() => {});
+  await prisma.kOT.deleteMany({}).catch(() => {});
+  await prisma.orderItem.deleteMany({}).catch(() => {});
+  await prisma.order.deleteMany({}).catch(() => {});
+  await prisma.payment.deleteMany({}).catch(() => {});
+  await prisma.folioItem.deleteMany({}).catch(() => {});
+  await prisma.folio.deleteMany({}).catch(() => {});
+  await prisma.reservation.deleteMany({}).catch(() => {});
+  await prisma.housekeepingTask.deleteMany({}).catch(() => {});
+  await prisma.purchaseItem.deleteMany({}).catch(() => {});
+  await prisma.purchase.deleteMany({}).catch(() => {});
+  await prisma.stockMovement.deleteMany({}).catch(() => {});
+  await prisma.inventoryItem.deleteMany({}).catch(() => {});
+  await prisma.vendor.deleteMany({}).catch(() => {});
+  await prisma.menuItem.deleteMany({}).catch(() => {});
+  await prisma.menuCategory.deleteMany({}).catch(() => {});
+  await prisma.table.deleteMany({}).catch(() => {});
+  await prisma.room.deleteMany({}).catch(() => {});
+  await prisma.roomType.deleteMany({}).catch(() => {});
+  await prisma.guest.deleteMany({}).catch(() => {});
+  await prisma.tenantSettings.deleteMany({}).catch(() => {});
+  await prisma.tenantFeature.deleteMany({}).catch(() => {});
+  await prisma.subscription.deleteMany({}).catch(() => {});
+  await prisma.user.deleteMany({}).catch(() => {});
+  await prisma.tenant.deleteMany({}).catch(() => {});
 
   console.log('Seeding system permissions...');
   const modulesList = [
@@ -97,10 +119,13 @@ async function main() {
       },
       users: {
         create: [
-          { name: 'Jubeda Khatun', email: 'admin@royalpalace.com', passwordHash: defaultPass, userRole: 'TENANT_ADMIN', isActive: true },
-          { name: 'Faisal', email: 'faisal@royalpalace.com', passwordHash: defaultPass, userRole: 'MANAGER', isActive: true },
-          { name: 'Ravi Verma', email: 'ravi@royalpalace.com', passwordHash: defaultPass, userRole: 'WAITER', isActive: true },
-          { name: 'Tanvir', email: 'tanvir@royalpalace.com', passwordHash: defaultPass, userRole: 'CHEF', isActive: true }
+          { name: 'Jubeda Khatun',  email: 'admin@royalpalace.com',        passwordHash: defaultPass, userRole: 'TENANT_ADMIN',  isActive: true },
+          { name: 'Faisal Ahmed',   email: 'faisal@royalpalace.com',       passwordHash: defaultPass, userRole: 'MANAGER',       isActive: true },
+          { name: 'Ravi Verma',     email: 'ravi@royalpalace.com',         passwordHash: defaultPass, userRole: 'WAITER',        isActive: true },
+          { name: 'Tanvir Hussain', email: 'tanvir@royalpalace.com',       passwordHash: defaultPass, userRole: 'CHEF',          isActive: true },
+          { name: 'Priya Sharma',   email: 'priya@royalpalace.com',        passwordHash: defaultPass, userRole: 'RECEPTIONIST',  isActive: true },
+          { name: 'Sunita Devi',    email: 'sunita@royalpalace.com',       passwordHash: defaultPass, userRole: 'HOUSEKEEPING',  isActive: true },
+          { name: 'Rahul Mehta',    email: 'rahul@royalpalace.com',        passwordHash: defaultPass, userRole: 'ACCOUNTANT',    isActive: true },
         ]
       }
     }

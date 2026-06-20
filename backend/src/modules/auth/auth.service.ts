@@ -58,11 +58,24 @@ export const registerTenant = async (dto: RegisterTenantDto) => {
 };
 
 export const login = async (dto: LoginDto) => {
-  const tenant = await prisma.tenant.findUnique({ where: { slug: dto.tenantSlug }, select: { id: true, isActive: true, name: true, businessType: true } });
-  if (!tenant || !tenant.isActive) throw createError('Tenant not found or inactive', 404);
+  let tenant;
+  let user;
 
-  const user = await prisma.user.findFirst({ where: { tenantId: tenant.id, email: dto.email, isActive: true } });
-  if (!user) throw createError('Invalid credentials', 401);
+  if (dto.tenantSlug) {
+    tenant = await prisma.tenant.findUnique({ where: { slug: dto.tenantSlug }, select: { id: true, isActive: true, name: true, businessType: true } });
+    if (!tenant || !tenant.isActive) throw createError('Tenant not found or inactive', 404);
+    user = await prisma.user.findFirst({ where: { tenantId: tenant.id, email: dto.email, isActive: true } });
+  } else {
+    user = await prisma.user.findFirst({
+      where: { email: dto.email, isActive: true },
+      include: { tenant: { select: { id: true, isActive: true, name: true, businessType: true } } }
+    });
+    if (user && user.tenant) {
+      tenant = user.tenant;
+    }
+  }
+
+  if (!user || !tenant || !tenant.isActive) throw createError('Invalid credentials', 401);
 
   const isValid = await bcrypt.compare(dto.password, user.passwordHash);
   if (!isValid) throw createError('Invalid credentials', 401);
@@ -70,7 +83,7 @@ export const login = async (dto: LoginDto) => {
   await prisma.user.update({ where: { id: user.id }, data: { lastLogin: new Date() } });
 
   const token = generateToken(user.id, tenant.id, user.email, user.userRole, user.roleId ?? undefined);
-  const { passwordHash: _, ...safeUser } = user;
+  const { passwordHash: _, tenant: __, ...safeUser } = user as any;
   return { user: { ...safeUser, tenantName: tenant.name, businessType: tenant.businessType }, token };
 };
 
