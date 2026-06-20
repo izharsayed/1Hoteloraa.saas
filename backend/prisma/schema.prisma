@@ -1,0 +1,803 @@
+// ============================================================
+// Hoteloraa SaaS - Full Prisma Schema
+// Multi-tenant: Restaurant | Lodging | Hotel+Restaurant
+// ============================================================
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum BusinessType {
+  RESTAURANT
+  LODGING
+  HOTEL_RESTAURANT
+}
+
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  TRIAL
+  EXPIRED
+  CANCELLED
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  MANAGER
+  RECEPTIONIST
+  WAITER
+  CHEF
+  HOUSEKEEPING
+  ACCOUNTANT
+  CASHIER
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  CLEANING
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  SERVED
+  CANCELLED
+  COMPLETED
+}
+
+enum KOTStatus {
+  PENDING
+  IN_PROGRESS
+  READY
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+  BANK_TRANSFER
+  WALLET
+  CREDIT
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+  REFUNDED
+  FAILED
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  MAINTENANCE
+  CHECKOUT_PENDING
+  CLEANING
+}
+
+enum HousekeepingStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  INSPECTED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum GuestIdType {
+  PASSPORT
+  DRIVING_LICENSE
+  NATIONAL_ID
+  AADHAAR
+  OTHER
+}
+
+enum InventoryUnit {
+  KG
+  GRAM
+  LITRE
+  ML
+  PIECE
+  PACKET
+  BOX
+  DOZEN
+  BOTTLE
+}
+
+enum PurchaseStatus {
+  PENDING
+  RECEIVED
+  PARTIAL
+  CANCELLED
+}
+
+// ============================================================
+// TENANT (Multi-Tenant Root)
+// ============================================================
+
+model Tenant {
+  id           String       @id @default(uuid())
+  name         String
+  slug         String       @unique
+  businessType BusinessType
+  phone        String?
+  email        String?
+  address      String?
+  city         String?
+  state        String?
+  country      String?
+  logoUrl      String?
+  currency     String       @default("INR")
+  timezone     String       @default("Asia/Kolkata")
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relations
+  users         User[]
+  subscription  Subscription?
+  features      TenantFeature[]
+  tables        Table[]
+  menuCategories MenuCategory[]
+  menuItems     MenuItem[]
+  orders        Order[]
+  kots          KOT[]
+  rooms         Room[]
+  roomTypes     RoomType[]
+  reservations  Reservation[]
+  guests        Guest[]
+  housekeeping  Housekeeping[]
+  inventory     InventoryItem[]
+  vendors       Vendor[]
+  purchases     Purchase[]
+  payments      Payment[]
+  reports       Report[]
+  settings      TenantSettings?
+  roles         Role[]
+  categories    Category[]
+
+  @@map("tenants")
+}
+
+// ============================================================
+// SUBSCRIPTION
+// ============================================================
+
+model Subscription {
+  id         String             @id @default(uuid())
+  tenantId   String             @unique
+  plan       SubscriptionPlan   @default(STARTER)
+  status     SubscriptionStatus @default(TRIAL)
+  startDate  DateTime           @default(now())
+  endDate    DateTime?
+  trialEnds  DateTime?
+  amount     Float              @default(0)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// ============================================================
+// FEATURE FLAGS (Feature-Based Access Control)
+// ============================================================
+
+model TenantFeature {
+  id        String  @id @default(uuid())
+  tenantId  String
+  feature   String  // e.g. "POS", "ROOMS", "HOUSEKEEPING"
+  isEnabled Boolean @default(true)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, feature])
+  @@map("tenant_features")
+}
+
+// ============================================================
+// ROLE & PERMISSION (RBAC)
+// ============================================================
+
+model Role {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  permissions RolePermission[]
+  users       User[]
+
+  @@unique([tenantId, name])
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  module      String   // e.g. "BILLING", "ROOMS"
+  action      String   // e.g. "CREATE", "READ", "UPDATE", "DELETE"
+  description String?
+  createdAt   DateTime @default(now())
+
+  roles RolePermission[]
+
+  @@unique([module, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ============================================================
+// USER
+// ============================================================
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String
+  roleId       String?
+  name         String
+  email        String
+  phone        String?
+  passwordHash String
+  userRole     UserRole @default(WAITER)
+  isActive     Boolean  @default(true)
+  lastLogin    DateTime?
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role         Role?          @relation(fields: [roleId], references: [id])
+  orders       Order[]
+  kots         KOT[]
+  housekeeping Housekeeping[]
+  checkIns     Reservation[]  @relation("CheckedInBy")
+  checkOuts    Reservation[]  @relation("CheckedOutBy")
+  payments     Payment[]
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+// ============================================================
+// CATEGORIES (Shared)
+// ============================================================
+
+model Category {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  description String?
+  type        String   // "MENU" | "INVENTORY" | "EXPENSE"
+  createdAt   DateTime @default(now())
+
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  menuItems MenuItem[]
+
+  @@map("categories")
+}
+
+// ============================================================
+// MENU
+// ============================================================
+
+model MenuCategory {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  description String?
+  imageUrl    String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  menuItems MenuItem[]
+
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id             String   @id @default(uuid())
+  tenantId       String
+  menuCategoryId String?
+  categoryId     String?
+  name           String
+  description    String?
+  price          Float
+  costPrice      Float?
+  imageUrl       String?
+  isVeg          Boolean  @default(true)
+  isAvailable    Boolean  @default(true)
+  preparationTime Int?    // minutes
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  menuCategory MenuCategory? @relation(fields: [menuCategoryId], references: [id])
+  category     Category?     @relation(fields: [categoryId], references: [id])
+  orderItems   OrderItem[]
+
+  @@map("menu_items")
+}
+
+// ============================================================
+// TABLES
+// ============================================================
+
+model Table {
+  id        String      @id @default(uuid())
+  tenantId  String
+  name      String
+  capacity  Int         @default(4)
+  floor     String?
+  section   String?
+  status    TableStatus @default(AVAILABLE)
+  qrCode    String?
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@map("tables")
+}
+
+// ============================================================
+// ORDERS
+// ============================================================
+
+model Order {
+  id            String      @id @default(uuid())
+  tenantId      String
+  tableId       String?
+  userId        String?
+  reservationId String?
+  orderNumber   String
+  status        OrderStatus @default(PENDING)
+  subtotal      Float       @default(0)
+  taxAmount     Float       @default(0)
+  discountAmount Float      @default(0)
+  totalAmount   Float       @default(0)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  table       Table?      @relation(fields: [tableId], references: [id])
+  user        User?       @relation(fields: [userId], references: [id])
+  items       OrderItem[]
+  kots        KOT[]
+  payment     Payment?
+  reservation Reservation? @relation(fields: [reservationId], references: [id])
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String  @id @default(uuid())
+  orderId    String
+  menuItemId String
+  quantity   Int     @default(1)
+  unitPrice  Float
+  totalPrice Float
+  notes      String?
+  isVoid     Boolean @default(false)
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+  kotItems KOTItem[]
+
+  @@map("order_items")
+}
+
+// ============================================================
+// KOT (Kitchen Order Ticket)
+// ============================================================
+
+model KOT {
+  id        String    @id @default(uuid())
+  tenantId  String
+  orderId   String
+  userId    String?
+  kotNumber String
+  status    KOTStatus @default(PENDING)
+  notes     String?
+  printedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  tenant Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order  Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user   User?    @relation(fields: [userId], references: [id])
+  items  KOTItem[]
+
+  @@map("kots")
+}
+
+model KOTItem {
+  id          String  @id @default(uuid())
+  kotId       String
+  orderItemId String
+  quantity    Int
+  notes       String?
+
+  kot       KOT       @relation(fields: [kotId], references: [id], onDelete: Cascade)
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+
+  @@map("kot_items")
+}
+
+// ============================================================
+// PAYMENTS & BILLING
+// ============================================================
+
+model Payment {
+  id            String        @id @default(uuid())
+  tenantId      String
+  orderId       String?       @unique
+  reservationId String?       @unique
+  userId        String?
+  amount        Float
+  method        PaymentMethod @default(CASH)
+  status        PaymentStatus @default(PENDING)
+  reference     String?
+  notes         String?
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order       Order?       @relation(fields: [orderId], references: [id])
+  reservation Reservation? @relation(fields: [reservationId], references: [id])
+  user        User?        @relation(fields: [userId], references: [id])
+  folioItems  FolioItem[]
+
+  @@map("payments")
+}
+
+model FolioItem {
+  id          String   @id @default(uuid())
+  paymentId   String
+  description String
+  amount      Float
+  type        String   // "CHARGE" | "PAYMENT" | "DISCOUNT"
+  createdAt   DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@map("folio_items")
+}
+
+// ============================================================
+// ROOMS
+// ============================================================
+
+model RoomType {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  description String?
+  basePrice   Float
+  maxOccupancy Int     @default(2)
+  amenities   String[] @default([])
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rooms  Room[]
+
+  @@map("room_types")
+}
+
+model Room {
+  id          String     @id @default(uuid())
+  tenantId    String
+  roomTypeId  String
+  number      String
+  floor       String?
+  description String?
+  status      RoomStatus @default(AVAILABLE)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roomType     RoomType       @relation(fields: [roomTypeId], references: [id])
+  reservations Reservation[]
+  housekeeping Housekeeping[]
+
+  @@unique([tenantId, number])
+  @@map("rooms")
+}
+
+// ============================================================
+// GUESTS
+// ============================================================
+
+model Guest {
+  id           String      @id @default(uuid())
+  tenantId     String
+  name         String
+  email        String?
+  phone        String
+  idType       GuestIdType @default(NATIONAL_ID)
+  idNumber     String?
+  address      String?
+  city         String?
+  country      String?
+  nationality  String?
+  dateOfBirth  DateTime?
+  notes        String?
+  totalStays   Int         @default(0)
+  totalSpent   Float       @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+
+  @@map("guests")
+}
+
+// ============================================================
+// RESERVATIONS / CHECK-IN / CHECK-OUT
+// ============================================================
+
+model Reservation {
+  id             String            @id @default(uuid())
+  tenantId       String
+  roomId         String
+  guestId        String
+  checkedInById  String?
+  checkedOutById String?
+  bookingRef     String            @unique
+  status         ReservationStatus @default(PENDING)
+  checkInDate    DateTime
+  checkOutDate   DateTime
+  actualCheckIn  DateTime?
+  actualCheckOut DateTime?
+  adults         Int               @default(1)
+  children       Int               @default(0)
+  ratePerNight   Float
+  totalNights    Int               @default(1)
+  roomCharges    Float             @default(0)
+  extraCharges   Float             @default(0)
+  discount       Float             @default(0)
+  totalAmount    Float             @default(0)
+  specialRequest String?
+  notes          String?
+  source         String?           // "WALK_IN" | "ONLINE" | "PHONE"
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  room        Room     @relation(fields: [roomId], references: [id])
+  guest       Guest    @relation(fields: [guestId], references: [id])
+  checkedInBy  User?   @relation("CheckedInBy", fields: [checkedInById], references: [id])
+  checkedOutBy User?   @relation("CheckedOutBy", fields: [checkedOutById], references: [id])
+  orders      Order[]
+  payment     Payment?
+
+  @@map("reservations")
+}
+
+// ============================================================
+// HOUSEKEEPING
+// ============================================================
+
+model Housekeeping {
+  id          String             @id @default(uuid())
+  tenantId    String
+  roomId      String
+  assignedTo  String?
+  status      HousekeepingStatus @default(PENDING)
+  taskType    String             // "CLEANING" | "INSPECTION" | "MAINTENANCE" | "TURNDOWN"
+  notes       String?
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  tenant     Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  room       Room   @relation(fields: [roomId], references: [id])
+  assignedUser User? @relation(fields: [assignedTo], references: [id])
+
+  @@map("housekeeping")
+}
+
+// ============================================================
+// INVENTORY
+// ============================================================
+
+model InventoryItem {
+  id              String        @id @default(uuid())
+  tenantId        String
+  name            String
+  description     String?
+  sku             String?
+  unit            InventoryUnit @default(PIECE)
+  quantity        Float         @default(0)
+  minimumStock    Float         @default(0)
+  costPrice       Float         @default(0)
+  imageUrl        String?
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchaseItems PurchaseItem[]
+
+  @@unique([tenantId, sku])
+  @@map("inventory_items")
+}
+
+// ============================================================
+// VENDORS
+// ============================================================
+
+model Vendor {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  email       String?
+  phone       String?
+  address     String?
+  gstin       String?
+  contactName String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchases Purchase[]
+
+  @@map("vendors")
+}
+
+// ============================================================
+// PURCHASES
+// ============================================================
+
+model Purchase {
+  id            String         @id @default(uuid())
+  tenantId      String
+  vendorId      String?
+  purchaseNumber String
+  status        PurchaseStatus @default(PENDING)
+  subtotal      Float          @default(0)
+  taxAmount     Float          @default(0)
+  totalAmount   Float          @default(0)
+  notes         String?
+  receivedAt    DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vendor    Vendor?        @relation(fields: [vendorId], references: [id])
+  items     PurchaseItem[]
+
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id              String  @id @default(uuid())
+  purchaseId      String
+  inventoryItemId String
+  quantity        Float
+  unitPrice       Float
+  totalPrice      Float
+
+  purchase      Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  @@map("purchase_items")
+}
+
+// ============================================================
+// REPORTS
+// ============================================================
+
+model Report {
+  id         String   @id @default(uuid())
+  tenantId   String
+  type       String   // "DAILY_SALES" | "OCCUPANCY" | "INVENTORY" | "REVENUE"
+  data       Json
+  period     String?  // "2025-06-19"
+  generatedAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+// ============================================================
+// TENANT SETTINGS
+// ============================================================
+
+model TenantSettings {
+  id              String   @id @default(uuid())
+  tenantId        String   @unique
+  taxRate         Float    @default(18)
+  serviceCharge   Float    @default(0)
+  invoicePrefix   String   @default("INV")
+  kotPrefix       String   @default("KOT")
+  bookingPrefix   String   @default("BKG")
+  footerNote      String?
+  smtpHost        String?
+  smtpPort        Int?
+  smtpUser        String?
+  smtpPass        String?
+  smsProvider     String?
+  smsApiKey       String?
+  updatedAt       DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_settings")
+}
+
+// ============================================================
+// AUDIT LOGS
+// ============================================================
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  action        String
+  actor         String
+  entity        String
+  previousValue String?
+  newValue      String?
+  severity      String   @default("INFO")
+  timestamp     DateTime @default(now())
+
+  @@map("audit_logs")
+}
