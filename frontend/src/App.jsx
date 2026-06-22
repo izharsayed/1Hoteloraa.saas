@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Sidebar from './components/Sidebar.jsx';
 import AccessDenied from './components/AccessDenied.jsx';
+import { Bell, Info, CheckCircle, AlertTriangle, X } from 'lucide-react';
+import api from './utils/api.js';
 
 // Core Pages
 import Login from './pages/Login.jsx';
@@ -59,6 +61,10 @@ import { MODULE_ACCESS } from './utils/permissions.js';
 // DashboardLayout — shared shell for all operational staff routes
 // --------------------------------------------------------------------------
 function DashboardLayout() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
   const userJson = localStorage.getItem('user');
   let user = { name: 'Staff Member', userRole: 'Staff' };
   try {
@@ -73,18 +79,119 @@ function DashboardLayout() {
     ? user.userRole.replace('_', ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
     : '';
 
+  const fetchNotifications = async () => {
+    try {
+      const data = await api.get('/notifications');
+      setNotifications(data || []);
+    } catch (e) {
+      console.error('Failed to fetch notifications:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const timer = setInterval(() => {
+      fetchNotifications();
+    }, 7000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleMarkRead = async (id) => {
+    try {
+      await api.patch(`/notifications/${id}/read`);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.post('/notifications/mark-all-read');
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
   return (
     <div className="flex h-screen overflow-hidden bg-cream">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(p => !p)} />
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top bar */}
-        <header className="h-16 border-b border-border-cream bg-white/70 backdrop-blur-md flex items-center justify-between px-8 z-10 shrink-0">
-          <div className="flex items-center gap-2">
+        <header className="h-16 border-b border-border-cream bg-white/70 backdrop-blur-md flex items-center justify-between px-6 z-10 shrink-0">
+          <div className="flex items-center gap-3">
             <span className="font-mono text-xs px-2 py-1 bg-gold-pale border border-gold/30 rounded text-gold font-semibold uppercase tracking-wider">
               {user.tenantName || 'Live Environment'}
             </span>
+            {/* Online indicator */}
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] inline-block" />
           </div>
           <div className="flex items-center gap-4">
+            {/* Notification Bell */}
+            <div className="relative">
+              <button 
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className="p-2 text-slate hover:text-navy hover:bg-cream/40 rounded-xl transition-all relative flex items-center justify-center"
+              >
+                <Bell className="w-5 h-5 text-slate-600 hover:text-navy" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white shadow-sm">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notificationsOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white border border-border-cream rounded-2xl shadow-xl z-50 overflow-hidden animate-scaleUp">
+                  <div className="p-4 border-b border-border-cream flex justify-between items-center bg-cream/10">
+                    <span className="font-display font-bold text-navy text-xs uppercase tracking-wider">Notifications</span>
+                    {unreadCount > 0 && (
+                      <button 
+                        onClick={handleMarkAllRead}
+                        className="text-[10px] text-amber-600 hover:text-navy font-bold transition-all uppercase"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto divide-y divide-border-cream/40">
+                    {notifications.length === 0 ? (
+                      <div className="p-6 text-center text-slate text-xs font-semibold">
+                        No new notifications
+                      </div>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div 
+                          key={notif.id}
+                          onClick={() => handleMarkRead(notif.id)}
+                          className={`p-4 hover:bg-amber-50/20 cursor-pointer flex gap-3 items-start transition-all ${!notif.isRead ? 'bg-amber-50/10' : ''}`}
+                        >
+                          {notif.type === 'SUCCESS' && <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />}
+                          {notif.type === 'WARNING' && <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />}
+                          {notif.type === 'DANGER' && <X className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />}
+                          {notif.type === 'INFO' && <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />}
+                          
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-xs text-charcoal font-semibold ${!notif.isRead ? 'font-extrabold text-navy' : ''}`}>
+                              {notif.title}
+                            </p>
+                            <p className="text-[10px] text-slate mt-0.5 leading-normal">{notif.message}</p>
+                            <span className="text-[8px] text-slate/50 block mt-1 font-medium">
+                              {new Date(notif.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="text-right">
               <p className="text-xs font-semibold text-charcoal">{user.name}</p>
               <p className="text-[10px] text-slate font-medium">{roleLabel}</p>

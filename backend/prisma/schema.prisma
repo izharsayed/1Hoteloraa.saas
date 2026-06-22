@@ -186,6 +186,7 @@ model Tenant {
   settings      TenantSettings?
   roles         Role[]
   categories    Category[]
+  notifications Notification[]
 
   @@map("tenants")
 }
@@ -298,9 +299,27 @@ model User {
   checkIns     Reservation[]  @relation("CheckedInBy")
   checkOuts    Reservation[]  @relation("CheckedOutBy")
   payments     Payment[]
+  passwordResetTokens PasswordResetToken[]
+  notifications Notification[]
 
   @@unique([tenantId, email])
   @@map("users")
+}
+
+// ============================================================
+// PASSWORD RESET TOKENS
+// ============================================================
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
 }
 
 // ============================================================
@@ -800,4 +819,21 @@ model AuditLog {
   timestamp     DateTime @default(now())
 
   @@map("audit_logs")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String?  // Target user, null for all/role-based
+  role      String?  // Target role name, null if user-specific
+  title     String
+  message   String
+  type      String   // 'INFO', 'SUCCESS', 'WARNING', 'DANGER'
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }

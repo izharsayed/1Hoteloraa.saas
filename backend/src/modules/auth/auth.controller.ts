@@ -31,6 +31,20 @@ export const getProfile = async (req: AuthRequest, res: Response, next: NextFunc
   } catch (err) { next(err); }
 };
 
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await authService.forgotPassword(req.body);
+    sendSuccess(res, result, result.message);
+  } catch (err) { next(err); }
+};
+
+export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await authService.resetPassword(req.body);
+    sendSuccess(res, result, result.message);
+  } catch (err) { next(err); }
+};
+
 export const logout = (_req: Request, res: Response) => {
   sendSuccess(res, null, 'Logged out successfully');
 };

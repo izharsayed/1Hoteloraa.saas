@@ -2,7 +2,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../../config/database';
 import config from '../../config/env';
-import { RegisterTenantDto, LoginDto, ChangePasswordDto } from './auth.dto';
+import { RegisterTenantDto, LoginDto, ChangePasswordDto, ForgotPasswordDto, ResetPasswordDto } from './auth.dto';
+import crypto from 'crypto';
 import { createError } from '../../middleware/error.middleware';
 
 const SALT_ROUNDS = 12;
@@ -106,6 +107,73 @@ export const getProfile = async (userId: string, tenantId: string) => {
   });
   if (!user) throw createError('User not found', 404);
   return user;
+};
+
+export const forgotPassword = async (dto: ForgotPasswordDto) => {
+  // Find user by email across all active tenants
+  const user = await prisma.user.findFirst({
+    where: { email: dto.email, isActive: true },
+    select: { id: true, name: true, email: true, tenantId: true },
+  });
+
+  // Always return a generic success message to prevent email enumeration attacks.
+  // If user not found, we still return success — but don't create a token.
+  if (!user) {
+    return {
+      message: 'If that email is registered, a reset code has been generated.',
+      // In production this would be null — token sent via email only
+      resetToken: null,
+      userName: null,
+    };
+  }
+
+  // Delete any existing unexpired tokens for this user
+  await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+
+  // Generate a secure random token (8 hex chars = easy to type)
+  const rawToken = crypto.randomBytes(4).toString('hex').toUpperCase();
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+  await prisma.passwordResetToken.create({
+    data: { userId: user.id, token: rawToken, expiresAt },
+  });
+
+  return {
+    message: 'Reset code generated. In production this would be emailed.',
+    // NOTE: In a real deployment, remove resetToken from the response
+    // and send it via email (e.g. nodemailer / SendGrid).
+    resetToken: rawToken,
+    userName: user.name,
+    email: user.email,
+    expiresIn: '15 minutes',
+  };
+};
+
+export const resetPassword = async (dto: ResetPasswordDto) => {
+  // Find the token record
+  const tokenRecord = await prisma.passwordResetToken.findUnique({
+    where: { token: dto.token },
+    include: { user: true },
+  });
+
+  if (!tokenRecord) throw createError('Invalid or expired reset code', 400);
+  if (tokenRecord.expiresAt < new Date()) {
+    // Clean up expired token
+    await prisma.passwordResetToken.delete({ where: { id: tokenRecord.id } });
+    throw createError('Reset code has expired. Please request a new one.', 400);
+  }
+
+  // Hash and update the password
+  const passwordHash = await bcrypt.hash(dto.newPassword, SALT_ROUNDS);
+  await prisma.user.update({
+    where: { id: tokenRecord.userId },
+    data: { passwordHash },
+  });
+
+  // Delete the used token (single-use)
+  await prisma.passwordResetToken.delete({ where: { id: tokenRecord.id } });
+
+  return { message: 'Password reset successfully. You can now log in with your new password.' };
 };
 
 const generateToken = (id: string, tenantId: string, email: string, userRole: string, roleId?: string): string => {

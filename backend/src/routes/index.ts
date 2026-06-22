@@ -29,6 +29,7 @@ import featuresRoutes from '../modules/features/features.routes';
 import subscriptionsRoutes from '../modules/subscriptions/subscriptions.routes';
 import categoriesRoutes from '../modules/categories/categories.routes';
 import superadminRoutes from '../modules/superadmin/superadmin.routes';
+import notificationsRoutes from '../modules/notifications/notifications.routes';
 
 const router = Router();
 
@@ -80,5 +81,6 @@ router.use('/features', featuresRoutes);
 router.use('/subscriptions', subscriptionsRoutes);
 router.use('/categories', categoriesRoutes);
 router.use('/superadmin', superadminRoutes);
+router.use('/notifications', notificationsRoutes);
 
 export default router;

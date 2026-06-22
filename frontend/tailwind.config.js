@@ -41,7 +41,22 @@ module.exports = {
         sans: ['Inter', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
+      keyframes: {
+        slideIn: {
+          '0%':   { opacity: '0', transform: 'translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        fadeIn: {
+          '0%':   { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        slideIn: 'slideIn 0.3s ease-out forwards',
+        fadeIn:  'fadeIn 0.25s ease-out forwards',
+      },
     },
   },
   plugins: [],
 }
+

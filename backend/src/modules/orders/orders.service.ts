@@ -2,6 +2,7 @@ import prisma from '../../config/database';
 import { createError } from '../../middleware/error.middleware';
 import { generateOrderNumber } from '../../shared/helpers';
 import { CreateOrderDto, UpdateOrderStatusDto, AddItemsDto } from './orders.dto';
+import * as notificationsService from '../notifications/notifications.service';
 
 // ---------------------------------------------------------------------------
 // Helper: recalculate and persist order totals
@@ -172,6 +173,15 @@ export const createOrder = async (
     });
   }
 
+  // Notify Chefs
+  const tableName = order.table?.name || 'Quick POS';
+  await notificationsService.createNotification(tenantId, {
+    role: 'CHEF',
+    title: 'New Order Placed',
+    message: `Order ${order.orderNumber} has been placed for ${tableName}.`,
+    type: 'INFO',
+  }).catch(err => console.error('Failed to create notification:', err));
+
   return order;
 };
 
@@ -340,6 +350,7 @@ export const cancelOrder = async (tenantId: string, id: string) => {
   const cancelled = await prisma.order.update({
     where: { id },
     data: { status: 'CANCELLED' },
+    include: { table: { select: { name: true } } },
   });
 
   // Release the table
@@ -349,6 +360,15 @@ export const cancelOrder = async (tenantId: string, id: string) => {
       data: { status: 'AVAILABLE' },
     });
   }
+
+  // Notify Chefs
+  const tableName = cancelled.table?.name || 'Quick POS';
+  await notificationsService.createNotification(tenantId, {
+    role: 'CHEF',
+    title: 'Order Cancelled',
+    message: `Order ${cancelled.orderNumber} for ${tableName} has been cancelled.`,
+    type: 'WARNING',
+  }).catch(err => console.error('Failed to create notification:', err));
 
   return cancelled;
 };

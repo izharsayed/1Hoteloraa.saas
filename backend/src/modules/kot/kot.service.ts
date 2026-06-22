@@ -2,6 +2,7 @@ import prisma from '../../config/database';
 import { createError } from '../../middleware/error.middleware';
 import { generateKOTNumber } from '../../shared/helpers';
 import { CreateKOTDto, UpdateKOTStatusDto } from './kot.dto';
+import * as notificationsService from '../notifications/notifications.service';
 
 // ---------------------------------------------------------------------------
 // getKOTs
@@ -175,7 +176,15 @@ export const updateKOTStatus = async (
     where: { id },
     data: { status: dto.status },
     include: {
-      order: { select: { id: true, orderNumber: true, status: true } },
+      order: {
+        select: {
+          id: true,
+          orderNumber: true,
+          status: true,
+          userId: true,
+          table: { select: { name: true } }
+        }
+      },
       items: {
         include: {
           orderItem: {
@@ -185,6 +194,26 @@ export const updateKOTStatus = async (
       },
     },
   });
+
+  // Trigger notification to waiter who placed the order
+  if (updatedKOT.order?.userId) {
+    const tableName = updatedKOT.order.table?.name || 'Quick POS';
+    if (dto.status === 'IN_PROGRESS') {
+      await notificationsService.createNotification(tenantId, {
+        userId: updatedKOT.order.userId,
+        title: 'Order Preparing',
+        message: `KOT ${updatedKOT.kotNumber} for ${tableName} is now being prepared.`,
+        type: 'INFO',
+      });
+    } else if (dto.status === 'READY') {
+      await notificationsService.createNotification(tenantId, {
+        userId: updatedKOT.order.userId,
+        title: 'Order Ready!',
+        message: `KOT ${updatedKOT.kotNumber} for ${tableName} is ready to serve!`,
+        type: 'SUCCESS',
+      });
+    }
+  }
 
   // When KOT is READY, push the parent order to READY as well
   // (only if it hasn't already progressed beyond that)
