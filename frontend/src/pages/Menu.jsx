@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Search, Utensils, X, Info } from 'lucide-react';
 import api from '../utils/api.js';
 
@@ -23,6 +23,7 @@ function Menu() {
   const [newItemPrepTime, setNewItemPrepTime] = useState('');
   const [newItemImageUrl, setNewItemImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const fetchData = async () => {
     try {
@@ -427,16 +428,22 @@ function Menu() {
                     </div>
                     {/* Upload Controls */}
                     <div className="flex-1 space-y-1.5">
-                      <label className="inline-block cursor-pointer bg-navy hover:bg-navy/90 text-gold text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm">
+                      <button 
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        className="inline-block bg-navy hover:bg-navy/90 text-gold text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm disabled:opacity-50"
+                      >
                         {uploading ? 'Uploading...' : 'Upload Image File'}
-                        <input 
-                          type="file" 
-                          accept="image/*"
-                          disabled={uploading}
-                          onChange={handleFileChange}
-                          className="hidden" 
-                        />
-                      </label>
+                      </button>
+                      <input 
+                        type="file" 
+                        ref={fileInputRef}
+                        accept="image/*"
+                        disabled={uploading}
+                        onChange={handleFileChange}
+                        className="hidden" 
+                      />
                       {newItemImageUrl && (
                         <button 
                           type="button" 
