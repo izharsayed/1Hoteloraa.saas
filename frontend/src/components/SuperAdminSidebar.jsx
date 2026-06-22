@@ -33,13 +33,8 @@ function SuperAdminSidebar() {
       {/* Brand Header */}
       <div className="h-16 flex items-center px-6 border-b border-white/10 shrink-0 bg-[#071527]">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/superadmin')}>
-          <div className="w-8 h-8 rounded-lg bg-gold flex items-center justify-center font-display font-bold text-navy">
-            H
-          </div>
-          <div>
-            <h1 className="font-display font-bold text-sm tracking-tight text-white leading-none">Hoteloraa</h1>
-            <span className="text-[9px] font-bold text-gold/80 tracking-widest uppercase mt-1 block">Super Admin Portal</span>
-          </div>
+          <img src="/logo.png" alt="Hoteloraa Logo" className="h-8 w-auto object-contain shrink-0 brightness-0 invert" />
+          <span className="text-[9px] font-bold text-gold/80 tracking-widest uppercase shrink-0 border-l border-white/20 pl-3">Super Admin</span>
         </div>
       </div>
 
