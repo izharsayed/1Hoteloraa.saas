@@ -433,21 +433,34 @@ function Waiter() {
                     <div 
                       key={item.id}
                       onClick={() => handleAddToCart(item)}
-                      className="p-3 border border-border-cream/70 rounded-xl hover:border-gold hover:bg-gold-pale/10 cursor-pointer flex flex-col justify-between h-28 group transition-all"
+                      className="p-3 border border-border-cream/70 rounded-xl hover:border-gold hover:bg-gold-pale/10 cursor-pointer flex gap-3 h-28 group transition-all"
                     >
-                      <div>
-                        <div className="flex justify-between items-start gap-1">
-                          <h4 className="font-semibold text-xs text-charcoal group-hover:text-navy truncate">{item.name}</h4>
-                          <span className={`w-2.5 h-2.5 rounded-full border border-white shrink-0 mt-0.5 ${item.isVeg ? 'bg-success' : 'bg-danger'}`} />
+                      {item.imageUrl ? (
+                        <img 
+                          src={item.imageUrl} 
+                          alt={item.name}
+                          className="w-16 h-16 rounded-lg object-cover border border-border-cream/50 group-hover:border-gold/30 shrink-0 self-center"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg bg-cream/40 flex items-center justify-center text-slate/40 shrink-0 self-center">
+                          <Utensils className="w-6 h-6 text-slate/30" />
                         </div>
-                        <p className="text-[10px] text-slate line-clamp-2 mt-1">{item.description}</p>
-                      </div>
+                      )}
+                      <div className="flex-1 flex flex-col justify-between min-w-0">
+                        <div>
+                          <div className="flex justify-between items-start gap-1">
+                            <h4 className="font-semibold text-xs text-charcoal group-hover:text-navy truncate">{item.name}</h4>
+                            <span className={`w-2.5 h-2.5 rounded-full border border-white shrink-0 mt-0.5 ${item.isVeg ? 'bg-success' : 'bg-danger'}`} />
+                          </div>
+                          <p className="text-[10px] text-slate line-clamp-2 mt-1">{item.description}</p>
+                        </div>
 
-                      <div className="flex justify-between items-center border-t border-border-cream/40 pt-2 mt-2">
-                        <span className="font-mono text-xs font-bold text-navy">₹{item.price}</span>
-                        <span className="w-5 h-5 rounded-lg bg-gold-pale border border-gold/10 text-gold flex items-center justify-center group-hover:bg-gold group-hover:text-navy transition-all">
-                          <Plus className="w-3.5 h-3.5" />
-                        </span>
+                        <div className="flex justify-between items-center border-t border-border-cream/40 pt-1.5 mt-1">
+                          <span className="font-mono text-xs font-bold text-navy">₹{item.price}</span>
+                          <span className="w-5 h-5 rounded-lg bg-gold-pale border border-gold/10 text-gold flex items-center justify-center group-hover:bg-gold group-hover:text-navy transition-all">
+                            <Plus className="w-3.5 h-3.5" />
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}

@@ -8,20 +8,19 @@ async function main() {
   console.log('Clearing existing database...');
   // Delete in reverse-dependency order to avoid FK constraint errors
   await prisma.auditLog.deleteMany({}).catch(() => {});
+  await prisma.notification.deleteMany({}).catch(() => {});
   await prisma.rolePermission.deleteMany({}).catch(() => {});
   await prisma.permission.deleteMany({}).catch(() => {});
-  await prisma.kotItem.deleteMany({}).catch(() => {});
+  await prisma.kOTItem.deleteMany({}).catch(() => {});
   await prisma.kOT.deleteMany({}).catch(() => {});
   await prisma.orderItem.deleteMany({}).catch(() => {});
   await prisma.order.deleteMany({}).catch(() => {});
   await prisma.payment.deleteMany({}).catch(() => {});
   await prisma.folioItem.deleteMany({}).catch(() => {});
-  await prisma.folio.deleteMany({}).catch(() => {});
   await prisma.reservation.deleteMany({}).catch(() => {});
-  await prisma.housekeepingTask.deleteMany({}).catch(() => {});
+  await prisma.housekeeping.deleteMany({}).catch(() => {});
   await prisma.purchaseItem.deleteMany({}).catch(() => {});
   await prisma.purchase.deleteMany({}).catch(() => {});
-  await prisma.stockMovement.deleteMany({}).catch(() => {});
   await prisma.inventoryItem.deleteMany({}).catch(() => {});
   await prisma.vendor.deleteMany({}).catch(() => {});
   await prisma.menuItem.deleteMany({}).catch(() => {});
@@ -293,12 +292,12 @@ async function main() {
 
   await prisma.menuItem.createMany({
     data: [
-      { tenantId: t1.id, menuCategoryId: startersCat.id, name: 'Paneer Tikka', description: 'Grilled paneer cubes marinated in spices', price: 240, costPrice: 90, isVeg: true, isAvailable: true },
-      { tenantId: t1.id, menuCategoryId: startersCat.id, name: 'Chicken Tikka', description: 'Grilled chicken pieces marinated in spices', price: 290, costPrice: 110, isVeg: false, isAvailable: true },
-      { tenantId: t1.id, menuCategoryId: mainsCat.id, name: 'Dal Makhani', description: 'Slow cooked black lentils with butter and cream', price: 180, costPrice: 60, isVeg: true, isAvailable: true },
-      { tenantId: t1.id, menuCategoryId: mainsCat.id, name: 'Butter Chicken', description: 'Tandoori chicken cooked in rich tomato gravy', price: 320, costPrice: 130, isVeg: false, isAvailable: true },
-      { tenantId: t1.id, menuCategoryId: mainsCat.id, name: 'Veg Biryani', description: 'Fragrant basmati rice cooked with fresh vegetables', price: 220, costPrice: 80, isVeg: true, isAvailable: true },
-      { tenantId: t1.id, menuCategoryId: dessertsCat.id, name: 'Gulab Jamun', description: 'Sweet milk dumplings dipped in sugar syrup', price: 90, costPrice: 30, isVeg: true, isAvailable: true },
+      { tenantId: t1.id, menuCategoryId: startersCat.id, name: 'Paneer Tikka', description: 'Grilled paneer cubes marinated in spices', price: 240, costPrice: 90, isVeg: true, isAvailable: true, imageUrl: '/images/dishes/paneer_tikka.png' },
+      { tenantId: t1.id, menuCategoryId: startersCat.id, name: 'Chicken Tikka', description: 'Grilled chicken pieces marinated in spices', price: 290, costPrice: 110, isVeg: false, isAvailable: true, imageUrl: '/images/dishes/chicken_tikka.png' },
+      { tenantId: t1.id, menuCategoryId: mainsCat.id, name: 'Dal Makhani', description: 'Slow cooked black lentils with butter and cream', price: 180, costPrice: 60, isVeg: true, isAvailable: true, imageUrl: '/images/dishes/dal_makhani.png' },
+      { tenantId: t1.id, menuCategoryId: mainsCat.id, name: 'Butter Chicken', description: 'Tandoori chicken cooked in rich tomato gravy', price: 320, costPrice: 130, isVeg: false, isAvailable: true, imageUrl: '/images/dishes/butter_chicken.png' },
+      { tenantId: t1.id, menuCategoryId: mainsCat.id, name: 'Veg Biryani', description: 'Fragrant basmati rice cooked with fresh vegetables', price: 220, costPrice: 80, isVeg: true, isAvailable: true, imageUrl: '/images/dishes/veg_biryani.png' },
+      { tenantId: t1.id, menuCategoryId: dessertsCat.id, name: 'Gulab Jamun', description: 'Sweet milk dumplings dipped in sugar syrup', price: 90, costPrice: 30, isVeg: true, isAvailable: true, imageUrl: '/images/dishes/gulab_jamun.png' },
       { tenantId: t1.id, menuCategoryId: dessertsCat.id, name: 'Vanilla Ice Cream', description: 'Classic vanilla flavor scoop', price: 80, costPrice: 20, isVeg: true, isAvailable: true },
       { tenantId: t1.id, menuCategoryId: beveragesCat.id, name: 'Masala Chai', description: 'Traditional spiced indian tea', price: 40, costPrice: 10, isVeg: true, isAvailable: true },
       { tenantId: t1.id, menuCategoryId: beveragesCat.id, name: 'Fresh Lime Soda', description: 'Refreshing sweet & salty lime drink', price: 70, costPrice: 15, isVeg: true, isAvailable: true },
@@ -319,11 +318,11 @@ async function main() {
   await prisma.menuItem.createMany({
     data: [
       { tenantId: t2.id, menuCategoryId: coffeeCat.id, name: 'Espresso', description: 'Strong black coffee', price: 100, costPrice: 20, isVeg: true, isAvailable: true },
-      { tenantId: t2.id, menuCategoryId: coffeeCat.id, name: 'Cappuccino', description: 'Espresso with steamed milk foam', price: 140, costPrice: 35, isVeg: true, isAvailable: true },
+      { tenantId: t2.id, menuCategoryId: coffeeCat.id, name: 'Cappuccino', description: 'Espresso with steamed milk foam', price: 140, costPrice: 35, isVeg: true, isAvailable: true, imageUrl: '/images/dishes/cappuccino.png' },
       { tenantId: t2.id, menuCategoryId: coffeeCat.id, name: 'Cafe Latte', description: 'Espresso with steamed milk', price: 150, costPrice: 40, isVeg: true, isAvailable: true },
-      { tenantId: t2.id, menuCategoryId: snacksCat.id, name: 'Cheese Sandwich', description: 'Grilled bread with cheddar cheese', price: 120, costPrice: 35, isVeg: true, isAvailable: true },
-      { tenantId: t2.id, menuCategoryId: snacksCat.id, name: 'Chicken Burger', description: 'Burger with crispy chicken patty', price: 180, costPrice: 65, isVeg: false, isAvailable: true },
-      { tenantId: t2.id, menuCategoryId: dessertsCat2.id, name: 'Chocolate Brownie', description: 'Rich chocolate warm brownie', price: 160, costPrice: 50, isVeg: true, isAvailable: true },
+      { tenantId: t2.id, menuCategoryId: snacksCat.id, name: 'Cheese Sandwich', description: 'Grilled bread with cheddar cheese', price: 120, costPrice: 35, isVeg: true, isAvailable: true, imageUrl: '/images/dishes/cheese_sandwich.png' },
+      { tenantId: t2.id, menuCategoryId: snacksCat.id, name: 'Chicken Burger', description: 'Burger with crispy chicken patty', price: 180, costPrice: 65, isVeg: false, isAvailable: true, imageUrl: '/images/dishes/chicken_burger.png' },
+      { tenantId: t2.id, menuCategoryId: dessertsCat2.id, name: 'Chocolate Brownie', description: 'Rich chocolate warm brownie', price: 160, costPrice: 50, isVeg: true, isAvailable: true, imageUrl: '/images/dishes/chocolate_brownie.png' },
     ]
   });
 
