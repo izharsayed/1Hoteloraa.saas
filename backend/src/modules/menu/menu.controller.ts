@@ -100,3 +100,15 @@ export const deleteMenuItem = async (req: AuthRequest, res: Response, next: Next
     next(err);
   }
 };
+
+export const uploadItemImage = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.file) {
+      return next(new Error('No file uploaded or file type not allowed'));
+    }
+    const relativeUrl = `/uploads/${req.file.filename}`;
+    sendSuccess(res, { imageUrl: relativeUrl }, 'Image uploaded successfully');
+  } catch (err) {
+    next(err);
+  }
+};

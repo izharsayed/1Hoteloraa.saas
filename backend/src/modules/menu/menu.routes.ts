@@ -9,6 +9,8 @@ import {
   updateMenuItemSchema,
 } from './menu.dto';
 
+import { uploadImage } from '../../middleware/upload.middleware';
+
 const router = Router();
 
 router.use(authenticate);
@@ -22,6 +24,7 @@ router.delete('/categories/:id', checkPermission('MENU', 'DELETE'), menuControll
 // Menu Items
 router.get('/items',     checkPermission('MENU', 'READ'),   menuController.getMenuItems);
 router.get('/items/:id', checkPermission('MENU', 'READ'),   menuController.getMenuItemById);
+router.post('/items/upload', checkPermission('MENU', 'CREATE'), uploadImage.single('image'), menuController.uploadItemImage);
 router.post('/items',    checkPermission('MENU', 'CREATE'), validate(createMenuItemSchema), menuController.createMenuItem);
 router.put('/items/:id', checkPermission('MENU', 'UPDATE'), validate(updateMenuItemSchema), menuController.updateMenuItem);
 router.delete('/items/:id', checkPermission('MENU', 'DELETE'), menuController.deleteMenuItem);

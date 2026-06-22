@@ -22,6 +22,7 @@ function Menu() {
   const [newItemIsAvailable, setNewItemIsAvailable] = useState(true);
   const [newItemPrepTime, setNewItemPrepTime] = useState('');
   const [newItemImageUrl, setNewItemImageUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -83,6 +84,29 @@ function Menu() {
     }
   };
 
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      setUploading(true);
+      setError('');
+      const result = await api.upload('/menu/items/upload', formData);
+      setNewItemImageUrl(result.imageUrl);
+      setSuccess('Image uploaded successfully');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to upload image');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleCreateMenuItem = async (e) => {
     e.preventDefault();
     if (!newItemName || !newItemPrice) {
@@ -136,6 +160,14 @@ function Menu() {
       (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
+
+  const getImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('/uploads')) {
+      return `http://localhost:5000${path}`;
+    }
+    return path;
+  };
 
   return (
     <div className="space-y-8 animate-fadeIn flex flex-col h-full">
@@ -227,7 +259,7 @@ function Menu() {
                 {/* Left side: Image */}
                 <div className="w-28 h-full shrink-0 relative rounded-xl overflow-hidden border border-border-cream/40 bg-cream/35 flex items-center justify-center">
                   {item.imageUrl ? (
-                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={getImageUrl(item.imageUrl)} alt={item.name} className="w-full h-full object-cover" />
                   ) : (
                     <Utensils className="w-10 h-10 text-slate/30" />
                   )}
@@ -377,16 +409,46 @@ function Menu() {
                   />
                 </div>
 
+                {/* File Upload for Dish Image */}
                 <div className="col-span-2">
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate mb-1">Dish Image URL</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. /images/dishes/cappuccino.png"
-                    value={newItemImageUrl}
-                    onChange={(e) => setNewItemImageUrl(e.target.value)}
-                    className="w-full px-3 py-2 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold font-mono"
-                  />
-                  <span className="text-[9px] text-slate/60 mt-1 block">To use a generated photo, place in `public/images/dishes/` and enter path.</span>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate mb-1">Dish Image</label>
+                  <div className="flex gap-4 items-center">
+                    {/* Image Preview */}
+                    <div className="w-20 h-20 rounded-xl border border-border-cream bg-cream/20 flex items-center justify-center overflow-hidden shrink-0">
+                      {newItemImageUrl ? (
+                        <img 
+                          src={getImageUrl(newItemImageUrl)} 
+                          alt="Dish Preview" 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        <Utensils className="w-8 h-8 text-slate/30" />
+                      )}
+                    </div>
+                    {/* Upload Controls */}
+                    <div className="flex-1 space-y-1.5">
+                      <label className="inline-block cursor-pointer bg-navy hover:bg-navy/90 text-gold text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm">
+                        {uploading ? 'Uploading...' : 'Upload Image File'}
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          disabled={uploading}
+                          onChange={handleFileChange}
+                          className="hidden" 
+                        />
+                      </label>
+                      {newItemImageUrl && (
+                        <button 
+                          type="button" 
+                          onClick={() => setNewItemImageUrl('')}
+                          className="text-[10px] text-red-500 font-bold ml-3 hover:underline"
+                        >
+                          Remove
+                        </button>
+                      )}
+                      <p className="text-[9px] text-slate/50">Supports JPG, PNG, WEBP, GIF. Max 5MB.</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="col-span-2">
