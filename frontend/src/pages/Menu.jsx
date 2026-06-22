@@ -1,130 +1,448 @@
-import React, { useState } from 'react';
-import { BookOpen, Plus, Edit3, Trash2, CheckCircle2, AlertCircle, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Trash2, Search, Utensils, X, Info } from 'lucide-react';
+import api from '../utils/api.js';
 
 function Menu() {
+  const [categories, setCategories] = useState([]);
+  const [menuItems, setMenuItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const [menuItems, setMenuItems] = useState([
-    { id: 'MNU-001', name: 'Paneer Tikka', category: 'Appetizers', price: 250, status: 'Active', desc: 'Charcoal grilled cottage cheese marinated in spiced yogurt' },
-    { id: 'MNU-002', name: 'Garlic Naan', category: 'Main Course', price: 60, status: 'Active', desc: 'Clay oven flatbread infused with fresh minced garlic and butter' },
-    { id: 'MNU-003', name: 'Dal Makhani', category: 'Main Course', price: 320, status: 'Active', desc: 'Slow cooked black lentils simmered overnight with cream and spices' },
-    { id: 'MNU-004', name: 'Veg Biryani', category: 'Main Course', price: 350, status: 'Active', desc: 'Fragrant basmati rice layered with spiced vegetables and saffron' },
-    { id: 'MNU-005', name: 'Hot Fudge Sunder', category: 'Desserts', price: 180, status: 'Active', desc: 'Rich vanilla bean gelato topped with warm chocolate fudge syrup' },
-    { id: 'MNU-006', name: 'Fresh Mint Mojito', category: 'Beverages', price: 150, status: 'Out of Stock', desc: 'Refreshing blend of lime, fresh mint leaves, white sugar, and club soda' }
-  ]);
+  // Add Item Modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemPrice, setNewItemPrice] = useState('');
+  const [newItemCostPrice, setNewItemCostPrice] = useState('');
+  const [newItemCategory, setNewItemCategory] = useState('');
+  const [newItemDescription, setNewItemDescription] = useState('');
+  const [newItemIsVeg, setNewItemIsVeg] = useState(true);
+  const [newItemIsAvailable, setNewItemIsAvailable] = useState(true);
+  const [newItemPrepTime, setNewItemPrepTime] = useState('');
+  const [newItemImageUrl, setNewItemImageUrl] = useState('');
 
-  const handlePriceChange = (id, newPrice) => {
-    setMenuItems(menuItems.map(item => 
-      item.id === id ? { ...item, price: parseInt(newPrice) || 0 } : item
-    ));
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const fetchedCats = await api.get('/menu/categories');
+      const fetchedItems = await api.get('/menu/items');
+      setCategories(fetchedCats || []);
+      setMenuItems(fetchedItems || []);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to fetch menu catalog data');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleStatusToggle = (id) => {
-    setMenuItems(menuItems.map(item => 
-      item.id === id ? { ...item, status: item.status === 'Active' ? 'Out of Stock' : 'Active' } : item
-    ));
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handlePriceChange = async (id, newPrice) => {
+    if (isNaN(newPrice) || newPrice <= 0) return;
+    try {
+      await api.put(`/menu/items/${id}`, { price: newPrice });
+      setMenuItems(prev => prev.map(item => item.id === id ? { ...item, price: newPrice } : item));
+      setSuccess('Price updated successfully');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to update price');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleStatusToggle = async (id, currentStatus) => {
+    try {
+      await api.put(`/menu/items/${id}`, { isAvailable: !currentStatus });
+      setMenuItems(prev => prev.map(item => item.id === id ? { ...item, isAvailable: !currentStatus } : item));
+      setSuccess('Availability status updated');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to update status');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleDeleteItem = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this menu item?')) return;
+    try {
+      await api.delete(`/menu/items/${id}`);
+      setMenuItems(prev => prev.filter(item => item.id !== id));
+      setSuccess('Menu item deleted');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to delete item');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleCreateMenuItem = async (e) => {
+    e.preventDefault();
+    if (!newItemName || !newItemPrice) {
+      setError('Please fill in Name and Price');
+      return;
+    }
+
+    try {
+      const payload = {
+        name: newItemName,
+        price: parseFloat(newItemPrice),
+        isVeg: newItemIsVeg,
+        isAvailable: newItemIsAvailable,
+        description: newItemDescription || undefined,
+        menuCategoryId: newItemCategory || undefined,
+        costPrice: newItemCostPrice ? parseFloat(newItemCostPrice) : undefined,
+        preparationTime: newItemPrepTime ? parseInt(newItemPrepTime) : undefined,
+        imageUrl: newItemImageUrl || undefined,
+      };
+
+      const newItem = await api.post('/menu/items', payload);
+      setMenuItems(prev => [...prev, newItem]);
+      setSuccess('Menu item added successfully');
+      setShowAddModal(false);
+      resetForm();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to create menu item');
+      setTimeout(() => setError(''), 4000);
+    }
+  };
+
+  const resetForm = () => {
+    setNewItemName('');
+    setNewItemPrice('');
+    setNewItemCostPrice('');
+    setNewItemCategory('');
+    setNewItemDescription('');
+    setNewItemIsVeg(true);
+    setNewItemIsAvailable(true);
+    setNewItemPrepTime('');
+    setNewItemImageUrl('');
   };
 
   const filteredItems = menuItems.filter(item => {
-    const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || item.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || item.menuCategoryId === selectedCategory;
+    const matchesSearch = 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-8 animate-fadeIn flex flex-col h-full">
+      {/* Messages */}
+      {success && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center gap-2 text-xs font-semibold shadow-sm fixed top-4 right-4 z-50 animate-slideIn">
+          <Info className="w-4 h-4 text-emerald-600" /> {success}
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl flex items-center gap-2 text-xs font-semibold shadow-sm fixed top-4 right-4 z-50 animate-slideIn">
+          <Info className="w-4 h-4 text-red-600" /> {error}
+        </div>
+      )}
+
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 shrink-0">
         <div>
           <h1 className="font-display font-bold text-3xl text-navy">POS Menu Catalog</h1>
           <p className="text-slate text-sm font-medium mt-1">Manage kitchen recipes, pricing structures, and active catalog dishes</p>
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <button 
+          onClick={() => { resetForm(); setShowAddModal(true); }}
+          className="btn-primary flex items-center gap-2"
+        >
           <Plus className="w-4 h-4 text-gold" /> Add Menu Item
         </button>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="soft-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
+      <div className="soft-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white shrink-0">
         <div className="flex items-center gap-2 bg-cream/20 border border-border-cream rounded-xl px-3 py-1.5 w-full md:max-w-xs">
           <Search className="w-4 h-4 text-slate" />
           <input 
             type="text" 
-            placeholder="Search by Dish name or KOT ID..." 
+            placeholder="Search by Dish name, desc, or ID..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent focus:outline-none text-xs w-full text-charcoal"
+            className="bg-transparent focus:outline-none text-xs w-full text-charcoal font-medium"
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          {['All', 'Appetizers', 'Main Course', 'Desserts', 'Beverages'].map((cat) => (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
+          <button
+            onClick={() => setSelectedCategory('All')}
+            className={`
+              px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap
+              ${selectedCategory === 'All' 
+                ? 'bg-navy border-navy text-gold shadow-sm' 
+                : 'bg-white border-border-cream text-slate hover:bg-gold-pale/10'
+              }
+            `}
+          >
+            All
+          </button>
+          {categories.map((cat) => (
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
               className={`
-                px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all
-                ${selectedCategory === cat 
-                  ? 'bg-navy border-navy text-gold' 
+                px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap
+                ${selectedCategory === cat.id 
+                  ? 'bg-navy border-navy text-gold shadow-sm' 
                   : 'bg-white border-border-cream text-slate hover:bg-gold-pale/10'
                 }
               `}
             >
-              {cat}
+              {cat.name}
             </button>
           ))}
         </div>
       </div>
 
       {/* Grid of Dishes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredItems.map((item) => (
-          <div key={item.id} className="soft-card p-6 bg-white flex flex-col justify-between h-52">
-            <div>
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-[10px] text-slate font-bold uppercase tracking-wider font-mono">{item.id}</span>
-                  <h3 className="font-display font-bold text-base text-navy mt-0.5">{item.name}</h3>
+      {loading ? (
+        <div className="text-center py-20 text-slate font-semibold text-xs animate-pulse">Loading menu catalog...</div>
+      ) : filteredItems.length === 0 ? (
+        <div className="text-center py-20 bg-white border border-border-cream rounded-2xl text-slate text-xs font-semibold">
+          No menu items found. Click 'Add Menu Item' to start building your catalog.
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto min-h-0 pr-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredItems.map((item) => (
+              <div 
+                key={item.id} 
+                className="soft-card p-4 bg-white flex gap-4 h-48 border border-border-cream/60 hover:border-gold/40 hover:shadow-md transition-all rounded-2xl"
+              >
+                {/* Left side: Image */}
+                <div className="w-28 h-full shrink-0 relative rounded-xl overflow-hidden border border-border-cream/40 bg-cream/35 flex items-center justify-center">
+                  {item.imageUrl ? (
+                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Utensils className="w-10 h-10 text-slate/30" />
+                  )}
+                  <span className={`absolute top-2 left-2 w-3.5 h-3.5 rounded-full border-2 border-white ${item.isVeg ? 'bg-success' : 'bg-danger'}`} />
                 </div>
-                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                  item.status === 'Active' ? 'bg-success-pale text-success' : 'bg-danger-pale text-danger'
-                }`}>
-                  {item.status}
-                </span>
+
+                {/* Right side: details */}
+                <div className="flex-1 flex flex-col justify-between min-w-0">
+                  <div className="min-w-0">
+                    <div className="flex justify-between items-start gap-1">
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[8px] text-slate font-bold uppercase tracking-wider font-mono block">ID: {item.id.slice(0, 8)}</span>
+                        <h3 className="font-display font-bold text-sm text-navy truncate mt-0.5">{item.name}</h3>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider shrink-0 ${
+                        item.isAvailable ? 'bg-success-pale text-success' : 'bg-danger-pale text-danger'
+                      }`}>
+                        {item.isAvailable ? 'Active' : 'Paused'}
+                      </span>
+                    </div>
+
+                    <span className="text-[10px] text-gold font-bold uppercase tracking-wide bg-navy/5 px-2 py-0.5 rounded-md mt-1.5 inline-block">
+                      {item.menuCategory?.name || 'Unassigned'}
+                    </span>
+                    <p className="text-slate text-[10px] mt-2 leading-normal line-clamp-2 font-medium">{item.description || 'No description provided.'}</p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="border-t border-border-cream/50 pt-2 flex items-center justify-between">
+                    <div className="flex items-center gap-1 bg-cream/10 border border-border-cream/60 rounded-lg px-2 py-1">
+                      <span className="text-navy text-[11px] font-bold font-mono">₹</span>
+                      <input 
+                        type="number"
+                        defaultValue={item.price}
+                        onBlur={(e) => handlePriceChange(item.id, parseFloat(e.target.value))}
+                        className="w-12 bg-transparent focus:outline-none text-[11px] font-mono font-bold text-navy"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button 
+                        onClick={() => handleStatusToggle(item.id, item.isAvailable)}
+                        className={`
+                          px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all
+                          ${item.isAvailable 
+                            ? 'bg-white border-danger/30 text-danger hover:bg-danger-pale' 
+                            : 'bg-white border-success/30 text-success hover:bg-success-pale'
+                          }
+                        `}
+                      >
+                        {item.isAvailable ? 'Pause' : 'Activate'}
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteItem(item.id)}
+                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg border border-red-100 hover:border-red-200 transition-all"
+                        title="Delete Item"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="text-slate text-xs mt-2 leading-relaxed line-clamp-2">{item.desc}</p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Add Menu Item Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-navy/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-border-cream flex justify-between items-center bg-cream/20">
+              <h3 className="font-display font-bold text-lg text-navy">Add New Menu Item</h3>
+              <button 
+                onClick={() => setShowAddModal(false)}
+                className="p-1 text-slate hover:text-navy hover:bg-cream/40 rounded-xl transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="border-t border-border-cream/50 pt-4 mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <span className="text-navy text-xs font-bold font-mono">₹</span>
-                <input 
-                  type="number"
-                  value={item.price}
-                  onChange={(e) => handlePriceChange(item.id, e.target.value)}
-                  className="w-16 px-2 py-1 border border-border-cream rounded-lg focus:outline-none focus:border-gold text-xs font-mono font-bold text-navy"
-                />
+            {/* Modal Body / Form */}
+            <form onSubmit={handleCreateMenuItem} className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate mb-1">Dish Name *</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="e.g. Garlic Naan"
+                    value={newItemName}
+                    onChange={(e) => setNewItemName(e.target.value)}
+                    className="w-full px-3 py-2 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate mb-1">Sell Price (₹) *</label>
+                  <input 
+                    type="number" 
+                    required
+                    min="1"
+                    placeholder="e.g. 150"
+                    value={newItemPrice}
+                    onChange={(e) => setNewItemPrice(e.target.value)}
+                    className="w-full px-3 py-2 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate mb-1">Cost Price (₹)</label>
+                  <input 
+                    type="number" 
+                    min="0"
+                    placeholder="e.g. 50"
+                    value={newItemCostPrice}
+                    onChange={(e) => setNewItemCostPrice(e.target.value)}
+                    className="w-full px-3 py-2 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate mb-1">Category</label>
+                  <select 
+                    value={newItemCategory}
+                    onChange={(e) => setNewItemCategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold bg-white"
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate mb-1">Prep Time (mins)</label>
+                  <input 
+                    type="number" 
+                    min="1"
+                    placeholder="e.g. 15"
+                    value={newItemPrepTime}
+                    onChange={(e) => setNewItemPrepTime(e.target.value)}
+                    className="w-full px-3 py-2 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate mb-1">Dish Image URL</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. /images/dishes/cappuccino.png"
+                    value={newItemImageUrl}
+                    onChange={(e) => setNewItemImageUrl(e.target.value)}
+                    className="w-full px-3 py-2 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold font-mono"
+                  />
+                  <span className="text-[9px] text-slate/60 mt-1 block">To use a generated photo, place in `public/images/dishes/` and enter path.</span>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate mb-1">Description</label>
+                  <textarea 
+                    rows="3"
+                    placeholder="Enter ingredients or plating instructions..."
+                    value={newItemDescription}
+                    onChange={(e) => setNewItemDescription(e.target.value)}
+                    className="w-full px-3 py-2 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center gap-6 py-2 col-span-2">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input 
+                      type="checkbox"
+                      checked={newItemIsVeg}
+                      onChange={(e) => setNewItemIsVeg(e.target.checked)}
+                      className="w-4 h-4 accent-success rounded border-border-cream"
+                    />
+                    <span className="text-xs font-semibold text-charcoal">Is Vegetarian</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input 
+                      type="checkbox"
+                      checked={newItemIsAvailable}
+                      onChange={(e) => setNewItemIsAvailable(e.target.checked)}
+                      className="w-4 h-4 accent-navy rounded border-border-cream"
+                    />
+                    <span className="text-xs font-semibold text-charcoal">Available for Sale</span>
+                  </label>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* Form Buttons */}
+              <div className="flex gap-3 border-t border-border-cream pt-4 mt-6">
                 <button 
-                  onClick={() => handleStatusToggle(item.id)}
-                  className={`
-                    px-3 py-1.5 text-xs font-bold rounded-xl border transition-all
-                    ${item.status === 'Active' 
-                      ? 'bg-white border-danger/30 text-danger hover:bg-danger-pale' 
-                      : 'bg-white border-success/30 text-success hover:bg-success-pale'
-                    }
-                  `}
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-4 py-2 border border-border-cream rounded-xl hover:bg-cream/20 text-xs font-bold text-slate transition-all"
                 >
-                  {item.status === 'Active' ? 'Set Out of Stock' : 'Set Active'}
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 btn-primary"
+                >
+                  Save Menu Item
                 </button>
               </div>
-            </div>
+            </form>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
