@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 
 function AdminLayout() {
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed_admin') === 'true');
+
+  const handleToggle = () => {
+    setCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar_collapsed_admin', next);
+      return next;
+    });
+  };
+
   const userJson = localStorage.getItem('user');
   let user = { name: 'Admin Administrator', userRole: 'TENANT_ADMIN', tenantName: 'Hoteloraa Property Node' };
   try {
@@ -15,7 +25,7 @@ function AdminLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-cream">
-      <AdminSidebar />
+      <AdminSidebar collapsed={collapsed} onToggle={handleToggle} />
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top subtle border header for Tenant Admin branding/status */}
         <header className="h-16 border-b border-border-cream bg-white/70 backdrop-blur-md flex items-center justify-between px-8 z-10 shrink-0">

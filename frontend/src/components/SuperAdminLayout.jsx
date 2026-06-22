@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import SuperAdminSidebar from './SuperAdminSidebar';
 
 function SuperAdminLayout() {
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed_superadmin') === 'true');
+
+  const handleToggle = () => {
+    setCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar_collapsed_superadmin', next);
+      return next;
+    });
+  };
+
   const userJson = localStorage.getItem('user');
   let user = { name: 'Global Administrator', userRole: 'SUPER_ADMIN' };
   try {
@@ -15,7 +25,7 @@ function SuperAdminLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-cream">
-      <SuperAdminSidebar />
+      <SuperAdminSidebar collapsed={collapsed} onToggle={handleToggle} />
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top subtle border header for Super Admin branding/status */}
         <header className="h-16 border-b border-border-cream bg-white/70 backdrop-blur-md flex items-center justify-between px-8 z-10 shrink-0">
