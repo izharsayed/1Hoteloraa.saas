@@ -25,7 +25,7 @@ export const getPendingCheckIns = async (tenantId: string) => {
   return prisma.reservation.findMany({
     where: {
       tenantId,
-      status: 'CONFIRMED',
+      status: { in: ['CONFIRMED', 'PENDING'] },
       checkInDate: { lte: today },
     },
     include: {
@@ -40,7 +40,7 @@ export const getPendingCheckIns = async (tenantId: string) => {
 
 /**
  * Performs the check-in operation for a given reservation:
- *   1. Validates the reservation belongs to the tenant and is CONFIRMED.
+ *   1. Validates the reservation belongs to the tenant and is CONFIRMED or PENDING.
  *   2. Updates reservation status → CHECKED_IN, sets actualCheckIn and checkedInById.
  *   3. Updates the room status → OCCUPIED.
  * All three writes are executed in a Prisma transaction.
@@ -55,7 +55,7 @@ export const checkIn = async (tenantId: string, userId: string, dto: CheckInDto)
     throw createError('Reservation not found', 404);
   }
 
-  if (reservation.status !== 'CONFIRMED') {
+  if (reservation.status !== 'CONFIRMED' && reservation.status !== 'PENDING') {
     throw createError(
       `Cannot check-in: reservation is currently ${reservation.status}`,
       400,

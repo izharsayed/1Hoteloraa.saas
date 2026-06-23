@@ -56,7 +56,7 @@ function WaiterLayout() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/login');
+    navigate('/login?loggedOut=1');
   };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;

@@ -459,10 +459,16 @@ function Login() {
   const [toast, setToast] = useState(null); // { type: 'success'|'info', message }
 
   useEffect(() => {
-    // Show "Logged out" toast on mount (brief)
-    setToast({ type: 'success', message: 'Logged out successfully' });
-    const timer = setTimeout(() => setToast(null), 4000);
-    return () => clearTimeout(timer);
+    // Only show the "logged out" toast if the user was explicitly redirected
+    // after a logout action (detected via ?loggedOut=1 query param).
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('loggedOut') === '1') {
+      setToast({ type: 'success', message: 'Logged out successfully' });
+      // Clean the URL so it doesn't persist on refresh
+      window.history.replaceState({}, '', window.location.pathname);
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   // Pre-fill token from forgot step

@@ -5,9 +5,15 @@ import { createError } from '../../middleware/error.middleware';
 
 const SALT_ROUNDS = 12;
 
-export const getUsers = async (tenantId: string) => {
+export const getUsers = async (tenantId: string, includeInactive = false) => {
   return prisma.user.findMany({
-    where: { tenantId },
+    where: {
+      tenantId,
+      // By default only return active users so deactivated staff
+      // don't reappear in the directory on refresh.
+      // Pass includeInactive=true to see the full list (e.g. SuperAdmin audit).
+      ...(includeInactive ? {} : { isActive: true }),
+    },
     select: {
       id: true,
       name: true,
@@ -62,8 +68,10 @@ export const getUserById = async (tenantId: string, id: string) => {
 };
 
 export const createUser = async (tenantId: string, dto: CreateUserDto) => {
+  // Only block on ACTIVE users — allow re-onboarding with the same email
+  // if the previous account was deactivated/suspended.
   const existing = await prisma.user.findFirst({
-    where: { tenantId, email: dto.email },
+    where: { tenantId, email: dto.email, isActive: true },
   });
   if (existing) throw createError('Email is already registered in this tenant', 400);
 
