@@ -12,7 +12,7 @@ function AdminFeatures() {
     setLoading(true);
     setError('');
     try {
-      const data = await api.get('/tenants/features');
+      const data = await api.get('/tenant/features');
       setFeatures(data || []);
     } catch (err) {
       setError(err.message || 'Failed to load property features');
@@ -29,7 +29,7 @@ function AdminFeatures() {
     setError('');
     setSuccess('');
     try {
-      await api.patch(`/tenants/features/${featureName}/toggle`, {});
+      await api.patch(`/tenant/features/${featureName}/toggle`, {});
       setSuccess(`Feature "${featureName}" toggled successfully`);
       fetchFeatures();
     } catch (err) {
