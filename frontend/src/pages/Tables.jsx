@@ -11,7 +11,9 @@ import {
   Utensils,
   Plus,
   Trash2,
-  X
+  X,
+  Layers,
+  Sunset
 } from 'lucide-react';
 import api from '../utils/api.js';
 
@@ -36,6 +38,8 @@ function Tables() {
     { name: 'All', icon: null },
     { name: 'Main Hall', icon: Home },
     { name: 'Garden Terrace', icon: Trees },
+    { name: 'First Floor', icon: Layers },
+    { name: 'Rooftop', icon: Sunset },
     { name: 'VIP Lounge', icon: Crown }
   ];
 
@@ -226,7 +230,7 @@ function Tables() {
             <span>Add Table</span>
           </button>
 
-          <div className="flex items-center gap-2 bg-surface-linen/50 p-1 border border-border-cream rounded-2xl">
+          <div className="flex flex-wrap items-center gap-2 bg-surface-linen/50 p-1 border border-border-cream rounded-2xl">
             {zones.map((zone) => {
               const ZoneIcon = zone.icon;
               const isSelected = selectedZone === zone.name;
@@ -553,6 +557,8 @@ function Tables() {
                 >
                   <option value="Main Hall">Main Hall</option>
                   <option value="Garden Terrace">Garden Terrace</option>
+                  <option value="First Floor">First Floor</option>
+                  <option value="Rooftop">Rooftop</option>
                   <option value="VIP Lounge">VIP Lounge</option>
                 </select>
               </div>
