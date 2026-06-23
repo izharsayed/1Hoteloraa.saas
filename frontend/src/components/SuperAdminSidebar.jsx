@@ -7,10 +7,11 @@ import {
   ShieldCheck, 
   FileText, 
   Users,
-  LogOut 
+  LogOut,
+  ChevronLeft
 } from 'lucide-react';
 
-function SuperAdminSidebar() {
+function SuperAdminSidebar({ collapsed, onToggle }) {
   const navigate = useNavigate();
 
   const navigation = [
@@ -29,22 +30,45 @@ function SuperAdminSidebar() {
   };
 
   return (
-    <aside className="w-64 bg-[#0B1F3A] border-r border-navy/20 flex flex-col h-full select-none shrink-0 text-white">
+    <aside 
+      className={`
+        ${collapsed ? 'w-16' : 'w-64'} 
+        bg-white border-r border-border-cream flex flex-col h-full select-none shrink-0 text-charcoal
+        transition-all duration-300 ease-in-out overflow-hidden
+      `}
+    >
       {/* Brand Header */}
-      <div className="h-16 flex items-center px-6 border-b border-white/10 shrink-0 bg-[#071527]">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/superadmin')}>
-          <div className="w-8 h-8 rounded-lg bg-gold flex items-center justify-center font-display font-bold text-navy">
-            H
-          </div>
-          <div>
-            <h1 className="font-display font-bold text-sm tracking-tight text-white leading-none">Hoteloraa</h1>
-            <span className="text-[9px] font-bold text-gold/80 tracking-widest uppercase mt-1 block">Super Admin Portal</span>
-          </div>
+      {collapsed ? (
+        <div className="flex flex-col items-center py-4 border-b border-border-cream bg-white shrink-0 animate-fadeIn">
+          <img 
+            src="/logo-icon.png" 
+            alt="Hoteloraa Logo Icon" 
+            className="h-8 w-auto object-contain cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+            onClick={onToggle}
+            title="Expand sidebar"
+          />
         </div>
-      </div>
+      ) : (
+        <div className="h-16 flex items-center justify-between px-4 border-b border-border-cream bg-white shrink-0">
+          <div
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => navigate('/superadmin')}
+          >
+            <img src="/logo.png" alt="Hoteloraa Logo" className="h-8 w-auto object-contain shrink-0" />
+            <span className="text-[9px] font-bold text-gold tracking-widest uppercase shrink-0 border-l border-border-cream pl-3">Super Admin</span>
+          </div>
+          <button
+            onClick={onToggle}
+            aria-label="Collapse sidebar"
+            className="flex items-center justify-center w-9 h-9 rounded-xl text-slate hover:text-navy hover:bg-white/70 active:scale-95 border border-transparent hover:border-border-cream transition-all duration-200"
+          >
+            <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
 
       {/* Navigation List */}
-      <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+      <nav className="flex-1 px-2 py-6 space-y-1.5 overflow-y-auto overflow-x-hidden">
         {navigation.map((item) => {
           const Icon = item.icon;
           return (
@@ -52,18 +76,25 @@ function SuperAdminSidebar() {
               key={item.name}
               to={item.path}
               end={item.path === '/superadmin'}
+              title={collapsed ? item.name : undefined}
               className={({ isActive }) => `
-                flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-xs transition-all duration-200 group
+                flex items-center gap-3 font-medium text-xs transition-all duration-200 group
+                ${collapsed 
+                  ? 'w-10 h-10 justify-center rounded-xl mx-auto' 
+                  : 'px-3 py-2 rounded-xl hover:translate-x-1'
+                }
                 ${isActive 
-                  ? 'bg-gold text-navy font-bold shadow-md shadow-gold/10' 
-                  : 'text-white/70 hover:bg-white/5 hover:text-white'
+                  ? collapsed 
+                    ? 'bg-gold-pale text-navy shadow-sm' 
+                    : 'bg-gold-pale text-navy border-l-4 border-gold shadow-sm font-semibold'
+                  : 'text-slate hover:bg-gold-pale/50 hover:text-navy'
                 }
               `}
             >
               {({ isActive }) => (
                 <>
-                  <Icon className={`w-4 h-4 transition-colors duration-200 ${isActive ? 'text-navy' : 'text-white/60 group-hover:text-white'}`} />
-                  <span>{item.name}</span>
+                  <Icon className={`w-4 h-4 shrink-0 transition-colors duration-200 ${isActive ? 'text-gold' : 'text-slate group-hover:text-navy'}`} />
+                  {!collapsed && <span className="truncate">{item.name}</span>}
                 </>
               )}
             </NavLink>
@@ -72,13 +103,21 @@ function SuperAdminSidebar() {
       </nav>
 
       {/* Bottom Actions */}
-      <div className="p-4 border-t border-white/10 bg-[#071527] shrink-0">
+      <div className="p-2 border-t border-border-cream bg-white shrink-0">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 font-bold text-xs hover:bg-red-500/10 hover:text-red-300 active:scale-98 transition-all"
+          title={collapsed ? 'Exit Portal' : undefined}
+          className={`
+            flex items-center gap-3 text-danger font-medium text-xs
+            hover:bg-danger-pale hover:text-danger active:scale-98 transition-all
+            ${collapsed 
+              ? 'w-10 h-10 justify-center rounded-xl mx-auto' 
+              : 'w-full px-3 py-2.5 rounded-xl'
+            }
+          `}
         >
-          <LogOut className="w-4 h-4" />
-          <span>Exit Portal</span>
+          <LogOut className="w-4 h-4 shrink-0" />
+          {!collapsed && <span>Exit Portal</span>}
         </button>
       </div>
     </aside>

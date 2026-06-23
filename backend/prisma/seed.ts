@@ -328,6 +328,129 @@ async function main() {
 
   console.log('Tables, Categories, and Items Seeded.');
 
+  console.log('Seeding Room Types, Rooms, and Guests...');
+
+  // 1. Room Types for Royal Palace Hotel (t1)
+  const standardTypeT1 = await prisma.roomType.create({
+    data: {
+      tenantId: t1.id,
+      name: 'Standard Room',
+      description: 'Cozy room with essential amenities for a comfortable stay.',
+      basePrice: 2500,
+      maxOccupancy: 2,
+      amenities: ['Free Wi-Fi', 'TV', 'Air Conditioning', 'Geyser'],
+    }
+  });
+
+  const deluxeTypeT1 = await prisma.roomType.create({
+    data: {
+      tenantId: t1.id,
+      name: 'Deluxe Room',
+      description: 'Spacious room offering premium comfort and a beautiful city view.',
+      basePrice: 4500,
+      maxOccupancy: 2,
+      amenities: ['Free Wi-Fi', 'TV', 'Air Conditioning', 'Mini Bar', 'City View', 'Safe'],
+    }
+  });
+
+  const suiteTypeT1 = await prisma.roomType.create({
+    data: {
+      tenantId: t1.id,
+      name: 'Executive Suite',
+      description: 'Luxurious suite with a separate living area, bathtub, and balcony.',
+      basePrice: 9000,
+      maxOccupancy: 4,
+      amenities: ['Free Wi-Fi', 'TV', 'Air Conditioning', 'Mini Bar', 'Bathtub', 'Balcony', 'Room Service'],
+    }
+  });
+
+  // Rooms for t1
+  await prisma.room.createMany({
+    data: [
+      { tenantId: t1.id, roomTypeId: standardTypeT1.id, number: '101', floor: '1', description: 'Near elevator', status: 'AVAILABLE' },
+      { tenantId: t1.id, roomTypeId: standardTypeT1.id, number: '102', floor: '1', description: 'Quiet end room', status: 'AVAILABLE' },
+      { tenantId: t1.id, roomTypeId: deluxeTypeT1.id, number: '201', floor: '2', description: 'With balcony', status: 'AVAILABLE' },
+      { tenantId: t1.id, roomTypeId: deluxeTypeT1.id, number: '202', floor: '2', description: 'Twin beds', status: 'AVAILABLE' },
+      { tenantId: t1.id, roomTypeId: suiteTypeT1.id, number: '301', floor: '3', description: 'Penthouse view suite', status: 'AVAILABLE' },
+    ]
+  });
+
+  // Room Types for Star Lodge (t3)
+  const singleTypeT3 = await prisma.roomType.create({
+    data: {
+      tenantId: t3.id,
+      name: 'Single Room',
+      description: 'Perfect for solo travelers.',
+      basePrice: 1500,
+      maxOccupancy: 1,
+      amenities: ['Free Wi-Fi', 'Fan'],
+    }
+  });
+
+  const doubleTypeT3 = await prisma.roomType.create({
+    data: {
+      tenantId: t3.id,
+      name: 'Double Room',
+      description: 'Comfortable double bed room.',
+      basePrice: 2800,
+      maxOccupancy: 2,
+      amenities: ['Free Wi-Fi', 'TV', 'Air Conditioning'],
+    }
+  });
+
+  // Rooms for t3
+  await prisma.room.createMany({
+    data: [
+      { tenantId: t3.id, roomTypeId: singleTypeT3.id, number: '101', floor: '1', description: 'Ground floor single room', status: 'AVAILABLE' },
+      { tenantId: t3.id, roomTypeId: doubleTypeT3.id, number: '102', floor: '1', description: 'Double room facing lawn', status: 'AVAILABLE' },
+    ]
+  });
+
+  // Guests for t1
+  await prisma.guest.createMany({
+    data: [
+      {
+        tenantId: t1.id,
+        name: 'Rajesh Kumar',
+        email: 'rajesh@gmail.com',
+        phone: '9876543210',
+        idType: 'AADHAAR',
+        idNumber: '1234-5678-9012',
+        address: '123 Mall Road',
+        city: 'Shimla',
+        country: 'India',
+        nationality: 'Indian',
+      },
+      {
+        tenantId: t1.id,
+        name: 'Priya Patel',
+        email: 'priya@gmail.com',
+        phone: '9876543211',
+        idType: 'DRIVING_LICENSE',
+        idNumber: 'DL-9876543',
+        address: '456 Ring Road',
+        city: 'Ahmedabad',
+        country: 'India',
+        nationality: 'Indian',
+      },
+      {
+        tenantId: t1.id,
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        phone: '5550199',
+        idType: 'PASSPORT',
+        idNumber: 'A1234567',
+        address: '789 Broadway',
+        city: 'New York',
+        country: 'USA',
+        nationality: 'American',
+      }
+    ]
+  });
+
+  console.log('Room Types, Rooms, and Guests Seeded.');
+
+
   console.log('Seeding simulated Audit Logs...');
   await prisma.auditLog.createMany({
     data: [

@@ -61,7 +61,7 @@ import { MODULE_ACCESS } from './utils/permissions.js';
 // DashboardLayout — shared shell for all operational staff routes
 // --------------------------------------------------------------------------
 function DashboardLayout() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed_manager') === 'true');
   const [notifications, setNotifications] = useState([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -118,7 +118,16 @@ function DashboardLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-cream">
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(p => !p)} />
+      <Sidebar 
+        collapsed={sidebarCollapsed} 
+        onToggle={() => {
+          setSidebarCollapsed(p => {
+            const next = !p;
+            localStorage.setItem('sidebar_collapsed_manager', next);
+            return next;
+          });
+        }} 
+      />
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top bar */}
         <header className="h-16 border-b border-border-cream bg-white/70 backdrop-blur-md flex items-center justify-between px-6 z-10 shrink-0">

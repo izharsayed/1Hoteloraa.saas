@@ -7,10 +7,11 @@ import {
   Sliders, 
   Building2, 
   LogOut,
-  LayoutDashboard
+  LayoutDashboard,
+  ChevronLeft
 } from 'lucide-react';
 
-function AdminSidebar() {
+function AdminSidebar({ collapsed, onToggle }) {
   const navigate = useNavigate();
 
   const navigation = [
@@ -28,19 +29,50 @@ function AdminSidebar() {
   };
 
   return (
-    <aside className="w-64 bg-surface-linen border-r border-border-cream flex flex-col h-full select-none shrink-0 transition-all duration-300 ease-in-out overflow-hidden">
+    <aside 
+      className={`
+        ${collapsed ? 'w-16' : 'w-64'} 
+        bg-white border-r border-border-cream flex flex-col h-full select-none shrink-0 text-charcoal
+        transition-all duration-300 ease-in-out overflow-hidden
+      `}
+    >
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-3 border-b border-border-cream bg-white/40 shrink-0">
-        <div 
-          className="flex items-center gap-3 cursor-pointer overflow-hidden transition-all duration-300 w-auto opacity-100" 
-          onClick={() => navigate('/admin')}
-        >
-          <img src="/logo.png" alt="Hoteloraa Logo" className="h-9 w-auto object-contain shrink-0" />
+      {collapsed ? (
+        <div className="flex flex-col items-center py-4 border-b border-border-cream bg-white shrink-0 animate-fadeIn">
+          <img 
+            src="/logo-icon.png" 
+            alt="Hoteloraa Logo Icon" 
+            className="h-8 w-auto object-contain cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+            onClick={onToggle}
+            title="Expand sidebar"
+          />
         </div>
-      </div>
+      ) : (
+        <div className="h-16 flex items-center justify-between px-4 border-b border-border-cream bg-white shrink-0">
+          <div
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => navigate('/admin')}
+          >
+            <div className="w-8 h-8 rounded-lg bg-gold flex items-center justify-center font-display font-bold text-navy shrink-0">
+              A
+            </div>
+            <div className="flex flex-col min-w-0">
+              <h1 className="font-display font-bold text-sm tracking-tight text-navy leading-none">Hoteloraa</h1>
+              <span className="text-[9px] font-bold text-gold tracking-widest uppercase mt-1 block text-ellipsis overflow-hidden whitespace-nowrap">Tenant Admin</span>
+            </div>
+          </div>
+          <button
+            onClick={onToggle}
+            aria-label="Collapse sidebar"
+            className="flex items-center justify-center w-9 h-9 rounded-xl text-slate hover:text-navy hover:bg-white/70 active:scale-95 border border-transparent hover:border-border-cream transition-all duration-200"
+          >
+            <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
 
       {/* Navigation List */}
-      <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden">
+      <nav className="flex-1 px-2 py-6 space-y-1.5 overflow-y-auto overflow-x-hidden">
         {navigation.map((item) => {
           const Icon = item.icon;
           return (
@@ -48,6 +80,7 @@ function AdminSidebar() {
               key={item.name}
               to={item.path}
               end={item.path === '/admin'}
+              title={collapsed ? item.name : undefined}
               className={({ isActive }) => `
                 flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-xs transition-all duration-200 group
                 ${isActive 
@@ -59,7 +92,7 @@ function AdminSidebar() {
               {({ isActive }) => (
                 <>
                   <Icon className={`w-4 h-4 shrink-0 transition-colors duration-200 ${isActive ? 'text-gold' : 'text-slate group-hover:text-navy'}`} />
-                  <span className="truncate">{item.name}</span>
+                  {!collapsed && <span className="truncate">{item.name}</span>}
                 </>
               )}
             </NavLink>
