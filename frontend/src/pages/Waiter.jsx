@@ -289,16 +289,16 @@ function Waiter() {
       {success && <div className="p-3 bg-success-pale border border-success/10 text-success rounded-xl text-xs font-bold shrink-0">{success}</div>}
 
       {/* Tabs */}
-      <div className="flex gap-4 border-b border-border-cream pb-1 shrink-0">
+      <div className="flex gap-4 border-b border-border-cream pb-1 shrink-0 overflow-x-auto">
         <button 
           onClick={() => setActiveTab('pos')}
-          className={`flex items-center gap-1.5 pb-2 text-sm font-bold transition-all relative ${
+          className={`flex items-center gap-1.5 pb-2 text-sm font-bold transition-all relative whitespace-nowrap ${
             activeTab === 'pos' 
               ? 'text-navy border-b-2 border-gold font-extrabold' 
               : 'text-slate hover:text-navy'
           }`}
         >
-          <Utensils className="w-4 h-4" />
+          <Utensils className="w-4 h-4 shrink-0" />
           <span>New Order (POS)</span>
         </button>
         <button 
@@ -306,13 +306,13 @@ function Waiter() {
             setActiveTab('history');
             loadOrders();
           }}
-          className={`flex items-center gap-1.5 pb-2 text-sm font-bold transition-all relative ${
+          className={`flex items-center gap-1.5 pb-2 text-sm font-bold transition-all relative whitespace-nowrap ${
             activeTab === 'history' 
               ? 'text-navy border-b-2 border-gold font-extrabold' 
               : 'text-slate hover:text-navy'
           }`}
         >
-          <History className="w-4 h-4" />
+          <History className="w-4 h-4 shrink-0" />
           <span>Active Orders & History</span>
         </button>
       </div>
@@ -365,9 +365,9 @@ function Waiter() {
           </div>
         ) : (
           // View 2: POS Menu Ordering Panel
-          <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
+          <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:min-h-0 overflow-y-auto lg:overflow-hidden pb-4 lg:pb-0">
             {/* Left panel: categories and items grid */}
-            <div className="flex-1 flex flex-col bg-white border border-border-cream rounded-2xl p-4 min-h-0">
+            <div className="flex-none lg:flex-1 h-[65vh] lg:h-auto flex flex-col bg-white border border-border-cream rounded-2xl p-4 lg:min-h-0">
               {/* Top drawer header */}
               <div className="flex justify-between items-center border-b border-border-cream pb-3 shrink-0">
                 <div>
@@ -469,8 +469,8 @@ function Waiter() {
             </div>
 
             {/* Right panel: Cart Checkout details */}
-            <div className="w-full lg:w-80 bg-white border border-border-cream rounded-2xl p-4 flex flex-col justify-between shrink-0 min-h-0">
-              <div className="flex flex-col min-h-0 flex-1">
+            <div className="flex-none w-full lg:w-80 bg-white border border-border-cream rounded-2xl p-4 flex flex-col justify-between shrink-0 lg:min-h-0">
+              <div className="flex flex-col lg:min-h-0 flex-1">
                 <div className="flex items-center gap-2 border-b border-border-cream pb-3 shrink-0 text-navy font-display font-semibold text-sm">
                   <ShoppingBag className="w-4 h-4 text-gold" /> Check Order Cart
                 </div>
@@ -583,9 +583,9 @@ function Waiter() {
                             {order.status}
                           </span>
                         </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate font-medium">
-                          <span className="flex items-center gap-1"><Utensils className="w-3.5 h-3.5 text-slate/60" /> {order.table?.name || 'Quick POS'}</span>
-                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5 text-slate/60" /> {new Date(order.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate font-medium mt-1">
+                          <span className="flex items-center gap-1"><Utensils className="w-3.5 h-3.5 text-slate/60 shrink-0" /> {order.table?.name || 'Quick POS'}</span>
+                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5 text-slate/60 shrink-0" /> {new Date(order.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                           <span>Waiter: {order.user?.name || 'POS'}</span>
                           <span>Items: {itemsCount}</span>
                         </div>
