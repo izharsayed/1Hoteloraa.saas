@@ -86,6 +86,8 @@ export const getMenuItems = async (tenantId: string, categoryId?: string) => {
   const menuItems = await prisma.menuItem.findMany({
     where: {
       tenantId,
+      // Exclude soft-deleted items (those marked with [DELETED] prefix due to order references)
+      NOT: { name: { startsWith: '[DELETED]' } },
       ...(categoryId ? { menuCategoryId: categoryId } : {}),
     },
     include: {
@@ -117,8 +119,13 @@ export const createMenuItem = async (tenantId: string, dto: CreateMenuItemDto) =
   }
 
   // Guard against duplicate item names within the same tenant
+  // Exclude soft-deleted items (prefixed with [DELETED]) from this check
   const existing = await prisma.menuItem.findFirst({
-    where: { tenantId, name: dto.name },
+    where: {
+      tenantId,
+      name: dto.name,
+      NOT: { name: { startsWith: '[DELETED]' } },
+    },
   });
   if (existing) throw createError(`Menu item "${dto.name}" already exists`, 409);
 
@@ -189,13 +196,24 @@ export const updateMenuItem = async (
 };
 
 export const deleteMenuItem = async (tenantId: string, id: string) => {
-  const item = await prisma.menuItem.findFirst({ where: { id, tenantId } });
+  const item = await prisma.menuItem.findFirst({
+    where: { id, tenantId },
+    include: { _count: { select: { orderItems: true } } },
+  });
   if (!item) throw createError('Menu item not found', 404);
 
-  // Soft delete by marking as unavailable
-  await prisma.menuItem.update({
-    where: { id },
-    data: { isAvailable: false },
-  });
+  // Prevent deletion if this item is referenced in existing orders
+  if (item._count.orderItems > 0) {
+    // Safe soft-delete: mark unavailable so it no longer appears in catalog
+    // but historical order references remain intact
+    await prisma.menuItem.update({
+      where: { id },
+      data: { isAvailable: false, name: `[DELETED] ${item.name}` },
+    });
+  } else {
+    // No order references — safe to hard delete
+    await prisma.menuItem.delete({ where: { id } });
+  }
+
   return { message: 'Menu item deleted successfully' };
 };

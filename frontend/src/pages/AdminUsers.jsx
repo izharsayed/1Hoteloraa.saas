@@ -74,7 +74,7 @@ function AdminUsers() {
     setError('');
     setSuccess('');
     try {
-      await api.put(`/users/${resettingUser.id}/reset-password`, { userId: resettingUser.id, newPassword });
+      await api.put(`/users/${resettingUser.id}/reset-password`, { newPassword });
       setSuccess(`Password reset successfully for ${resettingUser.name}`);
       setResettingUser(null);
       setNewPassword('');

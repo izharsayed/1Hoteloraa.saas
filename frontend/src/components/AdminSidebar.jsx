@@ -25,7 +25,7 @@ function AdminSidebar({ collapsed, onToggle }) {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/login');
+    navigate('/login?loggedOut=1');
   };
 
   return (
@@ -101,13 +101,21 @@ function AdminSidebar({ collapsed, onToggle }) {
       </nav>
 
       {/* Bottom Actions */}
-      <div className="p-2 border-t border-border-cream bg-white/20 shrink-0">
+      <div className="p-2 border-t border-border-cream bg-white shrink-0">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-danger font-medium text-xs hover:bg-danger-pale hover:text-danger active:scale-98 transition-all"
+          title={collapsed ? 'Exit Panel' : undefined}
+          className={`
+            flex items-center gap-3 text-danger font-medium text-xs
+            hover:bg-danger-pale hover:text-danger active:scale-98 transition-all
+            ${collapsed 
+              ? 'w-10 h-10 justify-center rounded-xl mx-auto' 
+              : 'w-full px-3 py-2.5 rounded-xl'
+            }
+          `}
         >
           <LogOut className="w-4 h-4 shrink-0" />
-          <span>Exit Panel</span>
+          {!collapsed && <span>Exit Panel</span>}
         </button>
       </div>
     </aside>
