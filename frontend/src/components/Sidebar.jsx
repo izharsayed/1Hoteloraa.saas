@@ -24,7 +24,8 @@ import {
   UserCog,
   Shield,
   Menu,
-  X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { MODULE_ACCESS } from '../utils/permissions';
 
@@ -123,39 +124,38 @@ function Sidebar({ collapsed, onToggle }) {
     <aside
       className={`
         ${collapsed ? 'w-16' : 'w-64'}
-        bg-surface-linen border-r border-border-cream flex flex-col h-full select-none shrink-0
+        bg-white border-r border-border-cream flex flex-col h-full select-none shrink-0
         transition-all duration-300 ease-in-out overflow-hidden
       `}
     >
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-3 border-b border-border-cream bg-white/40 shrink-0">
-        {/* Logo — hidden when collapsed */}
-        <div
-          className={`flex items-center gap-3 cursor-pointer overflow-hidden transition-all duration-300 ${collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}
-          onClick={() => navigate('/')}
-        >
-          <img src="/logo.png" alt="Hoteloraa Logo" className="h-9 w-auto object-contain shrink-0" />
+      {collapsed ? (
+        <div className="flex flex-col items-center py-4 border-b border-border-cream bg-white shrink-0 animate-fadeIn">
+          <img 
+            src="/logo-icon.png" 
+            alt="Hoteloraa Logo Icon" 
+            className="h-8 w-auto object-contain cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+            onClick={onToggle}
+            title="Expand sidebar"
+          />
         </div>
-
-        {/* Hamburger toggle button */}
-        <button
-          onClick={onToggle}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className={`
-            flex items-center justify-center w-9 h-9 rounded-xl
-            text-slate hover:text-navy hover:bg-white/70 active:scale-95
-            border border-transparent hover:border-border-cream
-            transition-all duration-200 shrink-0
-            ${collapsed ? 'mx-auto' : 'ml-auto'}
-          `}
-        >
-          {collapsed ? (
-            <Menu className="w-5 h-5" strokeWidth={2} />
-          ) : (
-            <X className="w-5 h-5" strokeWidth={2} />
-          )}
-        </button>
-      </div>
+      ) : (
+        <div className="h-16 flex items-center justify-between px-4 border-b border-border-cream bg-white shrink-0">
+          <div
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => navigate('/')}
+          >
+            <img src="/logo.png" alt="Hoteloraa Logo" className="h-9 w-auto object-contain" />
+          </div>
+          <button
+            onClick={onToggle}
+            aria-label="Collapse sidebar"
+            className="flex items-center justify-center w-9 h-9 rounded-xl text-slate hover:text-navy hover:bg-white/70 active:scale-95 border border-transparent hover:border-border-cream transition-all duration-200"
+          >
+            <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
 
       {/* Navigation List */}
       <nav className="flex-1 px-2 py-4 space-y-4 overflow-y-auto overflow-x-hidden">
@@ -181,13 +181,16 @@ function Sidebar({ collapsed, onToggle }) {
                     to={item.path}
                     title={collapsed ? item.name : undefined}
                     className={({ isActive }) => `
-                      flex items-center gap-3 rounded-xl font-medium text-xs transition-all duration-200 group
-                      ${collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2'}
+                      flex items-center gap-3 font-medium text-xs transition-all duration-200 group
+                      ${collapsed 
+                        ? 'w-10 h-10 justify-center rounded-xl mx-auto' 
+                        : 'px-3 py-2 rounded-xl hover:translate-x-1'
+                      }
                       ${isActive
                         ? collapsed
                           ? 'bg-gold-pale text-navy shadow-sm'
                           : 'bg-gold-pale text-navy border-l-4 border-gold shadow-sm font-semibold'
-                        : 'text-slate hover:bg-white/50 hover:text-navy'
+                        : 'text-slate hover:bg-gold-pale/50 hover:text-navy'
                       }
                     `}
                   >
@@ -209,14 +212,17 @@ function Sidebar({ collapsed, onToggle }) {
       </nav>
 
       {/* Bottom Actions */}
-      <div className="p-2 border-t border-border-cream bg-white/20 shrink-0">
+      <div className="p-2 border-t border-border-cream bg-white shrink-0">
         <button
           onClick={handleLogout}
           title={collapsed ? 'Exit Platform' : undefined}
           className={`
-            w-full flex items-center gap-3 rounded-xl text-danger font-medium text-xs
+            flex items-center gap-3 text-danger font-medium text-xs
             hover:bg-danger-pale hover:text-danger active:scale-98 transition-all
-            ${collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'}
+            ${collapsed 
+              ? 'w-10 h-10 justify-center rounded-xl mx-auto' 
+              : 'w-full px-3 py-2.5 rounded-xl'
+            }
           `}
         >
           <LogOut className="w-4 h-4 shrink-0" />
