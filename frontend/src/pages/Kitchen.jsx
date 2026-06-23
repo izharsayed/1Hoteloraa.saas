@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ChefHat, Clock, Check, Utensils, CheckSquare, Square, X } from 'lucide-react';
 import api from '../utils/api.js';
 
@@ -122,6 +122,26 @@ function Kitchen() {
   const inProgressTickets = tickets.filter(t => t.status === 'InProgress');
   const readyTickets = tickets.filter(t => t.status === 'Ready');
 
+  // Compute aggregated items for kitchen staff summary
+  const aggregatedItems = useMemo(() => {
+    const summary = {};
+    const activeTickets = tickets.filter(t => t.status === 'Pending' || t.status === 'InProgress');
+    
+    activeTickets.forEach(ticket => {
+      ticket.items.forEach(item => {
+        // Exclude items that are already checked off
+        if (!item.checked) {
+          if (!summary[item.name]) summary[item.name] = 0;
+          summary[item.name] += item.qty;
+        }
+      });
+    });
+
+    return Object.entries(summary)
+      .map(([name, qty]) => ({ name, qty }))
+      .sort((a, b) => b.qty - a.qty);
+  }, [tickets]);
+
   return (
     <div className="h-full flex flex-col space-y-6 overflow-hidden animate-fadeIn select-none">
       
@@ -139,8 +159,11 @@ function Kitchen() {
         </div>
       </div>
 
-      {/* KOT Columns */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-y-auto">
+      {/* Main Content Area */}
+      <div className="flex-1 min-h-0 flex flex-col xl:flex-row gap-6 overflow-hidden">
+        
+        {/* KOT Columns */}
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-y-auto pr-2">
         
         {/* Pending Column */}
         <div className="bg-[#FEF9F1] border border-border-cream/80 rounded-2xl flex flex-col h-full min-h-[300px]">
@@ -369,6 +392,35 @@ function Kitchen() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        </div>
+
+        {/* Aggregated Items Side Panel */}
+        <div className="w-full xl:w-80 bg-[#FEF9F1] border border-border-cream/80 rounded-2xl flex flex-col h-full min-h-[300px] shrink-0">
+          <div className="p-4 border-b border-border-cream/80 bg-white/50 rounded-t-2xl flex justify-between items-center border-t-4 border-navy">
+            <h3 className="text-xs font-bold text-navy uppercase tracking-wider">Aggregated Dishes</h3>
+            <span className="font-mono text-xs px-2 py-0.5 bg-navy text-gold font-bold rounded-lg border border-gold/20">
+              {aggregatedItems.reduce((acc, curr) => acc + curr.qty, 0)} Total
+            </span>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {aggregatedItems.length === 0 ? (
+              <div className="text-center text-slate text-xs py-8">
+                No active items needed.
+              </div>
+            ) : (
+              aggregatedItems.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center p-3 border border-border-cream rounded-xl bg-white hover:border-gold transition-colors">
+                  <span className="text-sm font-semibold text-navy">{item.name}</span>
+                  <span className="font-mono font-bold text-navy bg-gold-pale px-2.5 py-1 rounded-lg">
+                    x{item.qty}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

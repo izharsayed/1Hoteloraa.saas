@@ -82,16 +82,10 @@ function AdminSidebar({ collapsed, onToggle }) {
               end={item.path === '/admin'}
               title={collapsed ? item.name : undefined}
               className={({ isActive }) => `
-                flex items-center gap-3 font-medium text-xs transition-all duration-200 group
-                ${collapsed 
-                  ? 'w-10 h-10 justify-center rounded-xl mx-auto' 
-                  : 'px-3 py-2 rounded-xl hover:translate-x-1'
-                }
+                flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-xs transition-all duration-200 group
                 ${isActive 
-                  ? collapsed 
-                    ? 'bg-gold-pale text-navy shadow-sm' 
-                    : 'bg-gold-pale text-navy border-l-4 border-gold shadow-sm font-semibold'
-                  : 'text-slate hover:bg-gold-pale/50 hover:text-navy'
+                  ? 'bg-gold-pale text-navy border-l-4 border-gold shadow-sm font-semibold' 
+                  : 'text-slate hover:bg-white/50 hover:text-navy'
                 }
               `}
             >
@@ -106,21 +100,14 @@ function AdminSidebar({ collapsed, onToggle }) {
         })}
       </nav>
 
-      <div className="p-2 border-t border-border-cream bg-white shrink-0">
+      {/* Bottom Actions */}
+      <div className="p-2 border-t border-border-cream bg-white/20 shrink-0">
         <button
           onClick={handleLogout}
-          title={collapsed ? 'Exit Panel' : undefined}
-          className={`
-            flex items-center gap-3 text-danger font-medium text-xs
-            hover:bg-danger-pale hover:text-danger active:scale-98 transition-all
-            ${collapsed 
-              ? 'w-10 h-10 justify-center rounded-xl mx-auto' 
-              : 'w-full px-3 py-2.5 rounded-xl'
-            }
-          `}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-danger font-medium text-xs hover:bg-danger-pale hover:text-danger active:scale-98 transition-all"
         >
           <LogOut className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>Exit Panel</span>}
+          <span>Exit Panel</span>
         </button>
       </div>
     </aside>
