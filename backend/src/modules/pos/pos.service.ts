@@ -15,7 +15,14 @@ export const getPOSData = async (tenantId: string) => {
   });
 
   const menuItems = await prisma.menuItem.findMany({
-    where: { tenantId, isAvailable: true },
+    where: {
+      tenantId,
+      isAvailable: true,
+      OR: [
+        { menuCategoryId: null },
+        { menuCategory: { isActive: true } }
+      ]
+    },
     orderBy: { name: 'asc' },
   });
 

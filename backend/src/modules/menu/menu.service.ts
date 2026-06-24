@@ -88,6 +88,11 @@ export const getMenuItems = async (tenantId: string, categoryId?: string) => {
       tenantId,
       // Exclude soft-deleted items (those marked with [DELETED] prefix due to order references)
       NOT: { name: { startsWith: '[DELETED]' } },
+      // Filter out items whose category is soft-deleted (isActive: false)
+      OR: [
+        { menuCategoryId: null },
+        { menuCategory: { isActive: true } }
+      ],
       ...(categoryId ? { menuCategoryId: categoryId } : {}),
     },
     include: {

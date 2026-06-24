@@ -104,7 +104,15 @@ export const createOrder = async (
   const menuItemIds = dto.items.map((i) => i.menuItemId);
 
   const menuItems = await prisma.menuItem.findMany({
-    where: { id: { in: menuItemIds }, tenantId, isAvailable: true },
+    where: {
+      id: { in: menuItemIds },
+      tenantId,
+      isAvailable: true,
+      OR: [
+        { menuCategoryId: null },
+        { menuCategory: { isActive: true } }
+      ]
+    },
   });
 
   if (menuItems.length !== menuItemIds.length) {
@@ -245,7 +253,15 @@ export const addItemsToOrder = async (
   // Validate menu items
   const menuItemIds = dto.items.map((i) => i.menuItemId);
   const menuItems = await prisma.menuItem.findMany({
-    where: { id: { in: menuItemIds }, tenantId, isAvailable: true },
+    where: {
+      id: { in: menuItemIds },
+      tenantId,
+      isAvailable: true,
+      OR: [
+        { menuCategoryId: null },
+        { menuCategory: { isActive: true } }
+      ]
+    },
   });
 
   if (menuItems.length !== menuItemIds.length) {

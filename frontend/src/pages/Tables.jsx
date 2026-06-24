@@ -11,7 +11,9 @@ import {
   Utensils,
   Plus,
   Trash2,
-  X
+  X,
+  Layers,
+  Sunset
 } from 'lucide-react';
 import api from '../utils/api.js';
 
@@ -30,14 +32,35 @@ function Tables() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newTableName, setNewTableName] = useState('');
   const [newTableCapacity, setNewTableCapacity] = useState(4);
+  const [newTableFloor, setNewTableFloor] = useState('');
   const [newTableZone, setNewTableZone] = useState('Main Hall');
 
-  const zones = [
-    { name: 'All', icon: null },
-    { name: 'Main Hall', icon: Home },
-    { name: 'Garden Terrace', icon: Trees },
-    { name: 'VIP Lounge', icon: Crown }
-  ];
+  // Floors & Manage Floors State
+  const [floors, setFloors] = useState([]);
+  const [isManageFloorsModalOpen, setIsManageFloorsModalOpen] = useState(false);
+  const [newFloorName, setNewFloorName] = useState('');
+
+  // Dynamically build zones list
+  const getDynamicZones = () => {
+    const list = [{ name: 'All', icon: null }];
+    
+    // Add default sections
+    list.push({ name: 'Main Hall', icon: Home });
+    list.push({ name: 'Garden Terrace', icon: Trees });
+    list.push({ name: 'VIP Lounge', icon: Crown });
+    list.push({ name: 'Bar Area', icon: Sunset });
+    
+    // Add dynamic floors
+    floors.forEach(f => {
+      if (!list.some(x => x.name.toLowerCase() === f.name.toLowerCase())) {
+        list.push({ name: f.name, icon: Layers });
+      }
+    });
+    
+    return list;
+  };
+
+  const zones = getDynamicZones();
 
   // Load tables from backend
   const loadTables = async (silent = false) => {
@@ -59,8 +82,18 @@ function Tables() {
     }
   };
 
+  const loadFloors = async () => {
+    try {
+      const data = await api.get('/floors');
+      setFloors(data || []);
+    } catch (err) {
+      console.error('Failed to load floors', err);
+    }
+  };
+
   useEffect(() => {
     loadTables();
+    loadFloors();
     
     // Polling table updates every 10 seconds for real-time occupancy status
     const interval = setInterval(() => {
@@ -69,6 +102,12 @@ function Tables() {
 
     return () => clearInterval(interval);
   }, [selectedTable?.id]);
+
+  useEffect(() => {
+    if (floors.length > 0 && !newTableFloor) {
+      setNewTableFloor(floors[0].name);
+    }
+  }, [floors]);
 
   // Handle Add Table
   const handleAddTable = async () => {
@@ -83,16 +122,53 @@ function Tables() {
       await api.post('/tables', {
         name: newTableName.trim(),
         capacity: Number(newTableCapacity),
-        floor: newTableZone,
+        floor: newTableFloor || (floors[0]?.name || 'Ground Floor'),
         section: newTableZone
       });
       setSuccess(`Table ${newTableName} created successfully.`);
       setIsAddModalOpen(false);
       setNewTableName('');
       setNewTableCapacity(4);
+      setNewTableFloor(floors[0]?.name || '');
+      setNewTableZone('Main Hall');
       loadTables();
     } catch (err) {
       setError(err.message || 'Failed to create table');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCreateFloor = async () => {
+    if (!newFloorName.trim()) return;
+    setSubmitting(true);
+    setError('');
+    setSuccess('');
+    try {
+      await api.post('/floors', { name: newFloorName.trim() });
+      setNewFloorName('');
+      setSuccess(`Floor "${newFloorName.trim()}" added successfully.`);
+      await loadFloors();
+    } catch (err) {
+      setError(err.message || 'Failed to create floor');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteFloor = async (id) => {
+    const floorToDelete = floors.find(f => f.id === id);
+    if (!floorToDelete) return;
+    if (!window.confirm(`Are you sure you want to delete "${floorToDelete.name}"?`)) return;
+    setSubmitting(true);
+    setError('');
+    setSuccess('');
+    try {
+      await api.delete(`/floors/${id}`);
+      setSuccess(`Floor "${floorToDelete.name}" deleted successfully.`);
+      await loadFloors();
+    } catch (err) {
+      setError(err.message || 'Failed to delete floor');
     } finally {
       setSubmitting(false);
     }
@@ -219,6 +295,14 @@ function Tables() {
         {/* Actions & Zone Selector */}
         <div className="flex flex-wrap items-center gap-3">
           <button
+            onClick={() => setIsManageFloorsModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-cream/20 text-[#0B1F3A] border border-[#0B1F3A]/20 text-xs font-bold rounded-xl transition-all shadow-sm"
+          >
+            <Layers className="w-4 h-4 text-gold" />
+            <span>Manage Floors</span>
+          </button>
+
+          <button
             onClick={() => setIsAddModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-[#0B1F3A] hover:bg-[#142d50] text-gold text-xs font-bold rounded-xl transition-all shadow-md"
           >
@@ -226,7 +310,7 @@ function Tables() {
             <span>Add Table</span>
           </button>
 
-          <div className="flex items-center gap-2 bg-surface-linen/50 p-1 border border-border-cream rounded-2xl">
+          <div className="flex flex-wrap items-center gap-2 bg-surface-linen/50 p-1 border border-border-cream rounded-2xl">
             {zones.map((zone) => {
               const ZoneIcon = zone.icon;
               const isSelected = selectedZone === zone.name;
@@ -305,7 +389,11 @@ function Tables() {
                         <span className="text-[9px] opacity-75 font-semibold mt-0.5">{table.capacity} Pax</span>
                       </div>
                     </div>
-                    <span className="text-[10px] text-slate font-bold uppercase tracking-wider">{table.floor || 'Main Hall'}</span>
+                    <span className="text-[10px] text-slate font-bold uppercase tracking-wider">
+                      {table.floor && table.section && table.floor !== table.section 
+                        ? `${table.floor} • ${table.section}` 
+                        : (table.floor || table.section || 'Main Hall')}
+                    </span>
                   </div>
                 );
               })}
@@ -322,7 +410,11 @@ function Tables() {
                 <div className="flex justify-between items-center border-b border-border-cream pb-4">
                   <div>
                     <h3 className="font-display font-semibold text-lg text-navy">{selectedTable.name}</h3>
-                    <p className="text-[10px] text-slate font-semibold uppercase tracking-wider">{selectedTable.floor || 'Main Hall'}</p>
+                    <p className="text-[10px] text-slate font-semibold uppercase tracking-wider">
+                      {selectedTable.floor && selectedTable.section && selectedTable.floor !== selectedTable.section 
+                        ? `${selectedTable.floor} • ${selectedTable.section}` 
+                        : (selectedTable.floor || selectedTable.section || 'Main Hall')}
+                    </p>
                   </div>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                     selectedTable.status === 'OCCUPIED' ? 'bg-danger-pale text-danger border border-danger/20' : 
@@ -545,7 +637,20 @@ function Tables() {
               </div>
               
               <div>
-                <label className="block text-[10px] font-bold text-slate uppercase tracking-wider mb-1">Zone / Area</label>
+                <label className="block text-[10px] font-bold text-slate uppercase tracking-wider mb-1">Floor</label>
+                <select 
+                  value={newTableFloor}
+                  onChange={(e) => setNewTableFloor(e.target.value)}
+                  className="w-full px-3 py-2 border border-border-cream rounded-xl text-xs focus:outline-none focus:border-gold bg-white"
+                >
+                  {floors.map((f) => (
+                    <option key={f.id} value={f.name}>{f.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-[10px] font-bold text-slate uppercase tracking-wider mb-1">Zone / Area (Section)</label>
                 <select 
                   value={newTableZone}
                   onChange={(e) => setNewTableZone(e.target.value)}
@@ -554,6 +659,7 @@ function Tables() {
                   <option value="Main Hall">Main Hall</option>
                   <option value="Garden Terrace">Garden Terrace</option>
                   <option value="VIP Lounge">VIP Lounge</option>
+                  <option value="Bar Area">Bar Area</option>
                 </select>
               </div>
             </div>
@@ -571,6 +677,77 @@ function Tables() {
                 className="px-4 py-2 bg-navy text-gold font-bold text-xs rounded-xl hover:bg-navy/90 transition-all shadow"
               >
                 {submitting ? 'Adding...' : 'Add Table'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Floors Modal */}
+      {isManageFloorsModalOpen && (
+        <div className="fixed inset-0 bg-navy/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
+          <div className="bg-white border border-border-cream rounded-3xl p-6 w-96 max-w-[90%] shadow-xl space-y-4 animate-scaleUp">
+            <div className="flex justify-between items-center border-b border-border-cream pb-3">
+              <h3 className="font-display font-bold text-navy text-lg">Manage Restaurant Floors</h3>
+              <button 
+                onClick={() => setIsManageFloorsModalOpen(false)} 
+                className="p-1 text-slate hover:text-navy hover:bg-cream/40 rounded-xl transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* List of existing floors */}
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              <span className="text-slate text-[10px] font-bold uppercase tracking-wider block">Existing Floors</span>
+              {floors.length === 0 ? (
+                <div className="text-xs text-slate py-2">No floors created yet.</div>
+              ) : (
+                floors.map((f) => (
+                  <div key={f.id} className="flex justify-between items-center p-2.5 bg-cream/20 border border-border-cream/50 rounded-xl text-xs font-semibold text-charcoal">
+                    <span>{f.name}</span>
+                    <button
+                      onClick={() => handleDeleteFloor(f.id)}
+                      disabled={submitting}
+                      className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
+                      title="Delete Floor"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {/* Add Floor Input */}
+            <div className="pt-2 border-t border-border-cream space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-slate uppercase tracking-wider mb-1">New Floor Name</label>
+                <div className="flex gap-2">
+                  <input 
+                    type="text"
+                    value={newFloorName}
+                    onChange={(e) => setNewFloorName(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-border-cream rounded-xl text-xs focus:outline-none focus:border-gold placeholder-slate/40"
+                    placeholder="e.g. Third Floor"
+                  />
+                  <button
+                    onClick={handleCreateFloor}
+                    disabled={submitting || !newFloorName.trim()}
+                    className="px-4 py-2 bg-navy text-gold font-bold text-xs rounded-xl hover:bg-navy/90 transition-all shadow"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end pt-2">
+              <button 
+                onClick={() => setIsManageFloorsModalOpen(false)}
+                className="px-4 py-2 border border-border-cream text-slate font-bold text-xs rounded-xl hover:bg-cream/40 transition-all"
+              >
+                Close
               </button>
             </div>
           </div>
