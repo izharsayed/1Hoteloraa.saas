@@ -2,20 +2,19 @@
   "name": "hotaloraa-backend",
   "version": "1.0.0",
   "description": "Hoteloraa SaaS Backend Server",
-  "main": "dist/server.js",
+  "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "seed": "ts-node prisma/seed.ts",
-    "seed:reset": "cross-env FORCE_RESET=true ts-node prisma/seed-reset.ts",
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "seed": "node prisma/seed.js",
+    "seed:reset": "cross-env FORCE_RESET=true node prisma/seed.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:push": "prisma db push"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^5.12.1",
@@ -33,18 +32,7 @@
     "zod": "^3.23.4"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/compression": "^1.7.5",
-    "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
-    "@types/jsonwebtoken": "^9.0.6",
-    "@types/morgan": "^1.9.9",
-    "@types/multer": "^1.4.11",
-    "@types/node": "^20.12.7",
-    "@types/uuid": "^9.0.8",
     "nodemon": "^3.1.0",
-    "prisma": "^5.12.1",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "prisma": "^5.12.1"
   }
 }

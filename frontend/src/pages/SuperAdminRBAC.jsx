@@ -10,7 +10,14 @@ import {
   Lock, 
   FileLock2,
   X,
-  Activity
+  Activity,
+  Copy,
+  Search,
+  Filter,
+  Shield,
+  Sparkles,
+  Coffee,
+  Receipt
 } from 'lucide-react';
 import api from '../utils/api.js';
 
@@ -65,6 +72,19 @@ const mapToUiPermission = (key) => {
   return `${uiMod}.${uiAct}`;
 };
 
+// Helper function to dynamically map role names to Lucide icons
+const getRoleIcon = (roleName) => {
+  const name = roleName.toLowerCase();
+  if (name.includes('super admin') || name.includes('superadmin')) return ShieldCheck;
+  if (name.includes('tenant admin') || name.includes('admin')) return Users;
+  if (name.includes('manager')) return Settings2;
+  if (name.includes('receptionist')) return Key;
+  if (name.includes('waiter')) return Coffee;
+  if (name.includes('chef') || name.includes('kitchen') || name.includes('cook')) return Shield;
+  if (name.includes('cashier') || name.includes('accountant') || name.includes('billing')) return Receipt;
+  return Shield;
+};
+
 function SuperAdminRBAC() {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,10 +93,21 @@ function SuperAdminRBAC() {
   // Selected Active Role for Permissions Matrix
   const [selectedRoleId, setSelectedRoleId] = useState('');
   
+  // Search & Filter State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [matrixSearchQuery, setMatrixSearchQuery] = useState('');
+
   // Modals state
   const [showAddRoleModal, setShowAddRoleModal] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleDesc, setNewRoleDesc] = useState('');
+
+  const [showCloneModal, setShowCloneModal] = useState(false);
+  const [cloningRoleId, setCloningRoleId] = useState('');
+  const [cloneRoleName, setCloneRoleName] = useState('');
+  const [cloneRoleDesc, setCloneRoleDesc] = useState('');
+
   const [actionLoading, setActionLoading] = useState(false);
 
   // Toast
@@ -130,6 +161,25 @@ function SuperAdminRBAC() {
   }, []);
 
   const activeRole = roles.find(r => r.id === selectedRoleId) || roles[0];
+
+  // Filtering roles based on search and category filters
+  const filteredRoles = roles.filter(role => {
+    const matchesSearch = 
+      role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (role.description && role.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+    if (!matchesSearch) return false;
+    
+    if (roleFilter === 'system') return role.isSystem;
+    if (roleFilter === 'custom') return !role.isSystem;
+    return true; // 'all'
+  });
+
+  // Filtering modules in permissions table
+  const filteredModules = modules.filter(mod => 
+    mod.name.toLowerCase().includes(matrixSearchQuery.toLowerCase()) ||
+    mod.key.toLowerCase().includes(matrixSearchQuery.toLowerCase())
+  );
 
   const handleTogglePermission = async (permKey) => {
     // Prevent modification of Tenant Admin
@@ -194,6 +244,54 @@ function SuperAdminRBAC() {
     }
   };
 
+  // Bulk grant all privileges to selected role
+  const handleGrantAllPermissions = async () => {
+    if (activeRole.name === 'Tenant Admin') {
+      showToast('Tenant Admin role must retain all system permissions.');
+      return;
+    }
+
+    const allUiPermissions = [];
+    modules.forEach(mod => {
+      actions.forEach(act => {
+        allUiPermissions.push(`${mod.key}.${act}`);
+      });
+    });
+
+    setRoles(roles.map(r => r.id === selectedRoleId ? { ...r, permissions: allUiPermissions } : r));
+
+    try {
+      const dbPermissions = allUiPermissions.map(mapToDbPermission);
+      await api.patch(`/superadmin/roles/${selectedRoleId}/permissions`, {
+        permissions: dbPermissions
+      });
+      showToast(`Granted all privileges to ${activeRole.name}`);
+    } catch (err) {
+      showToast(`Error granting permissions: ${err.message}`);
+      fetchRoles();
+    }
+  };
+
+  // Bulk revoke all privileges from selected role
+  const handleRevokeAllPermissions = async () => {
+    if (activeRole.name === 'Tenant Admin') {
+      showToast('Tenant Admin role must retain all system permissions.');
+      return;
+    }
+
+    setRoles(roles.map(r => r.id === selectedRoleId ? { ...r, permissions: [] } : r));
+
+    try {
+      await api.patch(`/superadmin/roles/${selectedRoleId}/permissions`, {
+        permissions: []
+      });
+      showToast(`Revoked all privileges from ${activeRole.name}`);
+    } catch (err) {
+      showToast(`Error revoking permissions: ${err.message}`);
+      fetchRoles();
+    }
+  };
+
   const handleCreateRole = async (e) => {
     e.preventDefault();
     if (!newRoleName) return;
@@ -215,6 +313,46 @@ function SuperAdminRBAC() {
       setSelectedRoleId(res.id);
     } catch (err) {
       showToast(`Error creating role: ${err.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Clone an existing role configuration into a new role template
+  const handleCloneRole = async (e) => {
+    e.preventDefault();
+    if (!cloneRoleName || !cloningRoleId) return;
+
+    setActionLoading(true);
+    try {
+      // 1. Create the new role template
+      const res = await api.post('/superadmin/roles', {
+        name: cloneRoleName,
+        description: cloneRoleDesc
+      });
+
+      // 2. Extract permission keys from source role
+      const sourceRole = roles.find(r => r.id === cloningRoleId);
+      if (sourceRole && sourceRole.permissions.length > 0) {
+        const dbPermissions = sourceRole.permissions.map(mapToDbPermission);
+        
+        // 3. Map/insert clone permissions to database
+        await api.patch(`/superadmin/roles/${res.id}/permissions`, {
+          permissions: dbPermissions
+        });
+      }
+
+      showToast(`Global Role blueprint "${cloneRoleName}" cloned successfully.`);
+      setShowCloneModal(false);
+      setCloneRoleName('');
+      setCloneRoleDesc('');
+      setCloningRoleId('');
+
+      // Refresh list and select the new role
+      await fetchRoles();
+      setSelectedRoleId(res.id);
+    } catch (err) {
+      showToast(`Error cloning role: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
@@ -256,7 +394,7 @@ function SuperAdminRBAC() {
   }
 
   return (
-    <div className="space-y-8 animate-fadeIn relative">
+    <div className="space-y-8 animate-fadeIn relative pb-12">
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-50 bg-navy border border-gold text-white px-5 py-3 rounded-2xl flex items-center gap-3 shadow-xl shadow-stone-900/10 animate-slideIn">
@@ -275,103 +413,229 @@ function SuperAdminRBAC() {
         </div>
         <button 
           onClick={() => setShowAddRoleModal(true)}
-          className="btn-primary text-xs px-5 py-2.5 flex items-center gap-2"
+          className="btn-primary text-xs px-5 py-2.5 flex items-center gap-2 self-start md:self-auto"
         >
           <Plus className="w-4 h-4" /> Create Custom Role
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Roles directory */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="soft-card bg-white p-6 space-y-4">
-            <h3 className="font-display font-semibold text-base text-navy flex items-center gap-2 border-b border-border-cream pb-3">
-              <Users className="w-4 h-4 text-gold" /> Global Roles Registry
-            </h3>
-            <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
-              {roles.map(r => (
-                <div 
-                  key={r.id}
-                  onClick={() => setSelectedRoleId(r.id)}
-                  className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer text-left relative ${
-                    selectedRoleId === r.id 
-                      ? 'bg-navy border-navy text-white shadow-md' 
-                      : 'border-border-cream hover:border-gold hover:bg-cream/5 text-charcoal'
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <span className="text-xs font-bold leading-none">{r.name}</span>
-                    <span className={`text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded leading-none ${
-                      selectedRoleId === r.id 
-                        ? 'bg-white/10 text-gold-light'
-                        : 'bg-cream text-navy border border-border-cream/50'
-                    }`}>
-                      {r.isSystem ? 'System' : 'Custom'}
-                    </span>
-                  </div>
-                  <p className={`text-[10px] mt-2 font-medium line-clamp-2 leading-relaxed ${
-                    selectedRoleId === r.id ? 'text-white/70' : 'text-slate'
-                  }`}>
-                    {r.description || 'No description provided.'}
-                  </p>
-                  <div className="flex justify-between items-center mt-3 pt-2 border-t border-dashed border-border-cream/20">
-                    <span className={`text-[9px] font-mono font-bold uppercase tracking-wider ${
-                      selectedRoleId === r.id ? 'text-gold' : 'text-navy'
-                    }`}>
-                      {r.permissions.length} Permissions Active
-                    </span>
-                    {!r.isSystem && (
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteRole(r.id, r.name, r.isSystem);
-                        }}
-                        className={`p-1 rounded hover:bg-red-500/10 transition-colors ${
-                          selectedRoleId === r.id ? 'text-red-400 hover:text-red-300' : 'text-danger'
-                        }`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* Search & Tabs Filter Control Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white/40 border border-border-cream rounded-2xl backdrop-blur-md">
+        {/* Search */}
+        <div className="relative w-full sm:max-w-xs">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate" />
+          <input
+            type="text"
+            placeholder="Search global blueprints..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold text-charcoal placeholder-slate"
+          />
         </div>
 
-        {/* Right Column: Permission Matrix */}
-        {activeRole && (
-          <div className="lg:col-span-8 space-y-6">
-            <div className="soft-card bg-white p-6 space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-cream pb-4">
+        {/* Tab Filters */}
+        <div className="flex items-center gap-1 bg-cream/20 p-1.5 border border-border-cream/60 rounded-xl overflow-x-auto">
+          {[
+            { id: 'all', label: 'All Blueprints' },
+            { id: 'system', label: 'System Predefined' },
+            { id: 'custom', label: 'Custom Templates' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setRoleFilter(tab.id)}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                roleFilter === tab.id
+                  ? 'bg-navy text-white shadow'
+                  : 'text-charcoal hover:bg-cream/40'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grid of Role Cards */}
+      {filteredRoles.length === 0 ? (
+        <div className="p-12 text-center bg-white/30 border border-dashed border-border-cream rounded-[2rem] flex flex-col items-center justify-center space-y-3">
+          <Shield className="w-8 h-8 text-slate animate-pulse" />
+          <p className="text-xs font-bold text-navy uppercase tracking-wider">No matching roles found</p>
+          <p className="text-slate text-xs max-w-sm">Try modifying your search queries or selecting another filter tab.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredRoles.map(r => {
+            const IconComponent = getRoleIcon(r.name);
+            const totalPerms = modules.length * actions.length; // 40
+            const activeCount = r.permissions.length;
+            const percentActive = Math.round((activeCount / totalPerms) * 100);
+            const isSelected = selectedRoleId === r.id;
+
+            return (
+              <div 
+                key={r.id}
+                onClick={() => setSelectedRoleId(r.id)}
+                className={`p-6 rounded-[2rem] border bg-white soft-card cursor-pointer transition-all duration-300 relative flex flex-col justify-between ${
+                  isSelected 
+                    ? 'border-navy shadow-lg ring-1 ring-navy bg-gradient-to-br from-white to-cream/10' 
+                    : 'border-border-cream hover:border-gold hover:shadow-md hover:-translate-y-0.5'
+                }`}
+              >
+                {/* Card Header */}
                 <div>
-                  <h3 className="font-display font-semibold text-lg text-navy">
-                    Permissions Matrix: <span className="text-gold font-bold">{activeRole.name}</span>
-                  </h3>
-                  <p className="text-[11px] text-slate mt-0.5">Toggle runtime modules and read/write permission flags. System roles are pre-seeded.</p>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={`p-3 rounded-xl transition-colors ${isSelected ? 'bg-navy text-gold' : 'bg-cream/40 text-navy'}`}>
+                      <IconComponent className="w-5 h-5" />
+                    </div>
+                    <span className={`text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-full font-bold leading-none ${
+                      r.isSystem 
+                        ? 'bg-navy text-gold-light border border-gold/10' 
+                        : 'bg-gold-pale text-navy border border-gold/30'
+                    }`}>
+                      {r.isSystem ? 'System Blueprint' : 'Custom Template'}
+                    </span>
+                  </div>
+                  
+                  <h3 className="font-display font-bold text-base text-navy mb-1.5">{r.name}</h3>
+                  <p className="text-slate text-xs font-medium line-clamp-3 leading-relaxed mb-4">
+                    {r.description || 'No description provided.'}
+                  </p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate font-bold uppercase tracking-wider">Module Overrides</span>
-                  <span className={`w-2.5 h-2.5 rounded-full ${activeRole.name === 'Tenant Admin' ? 'bg-success' : 'bg-gold animate-pulse'}`} />
+                {/* Card Footer Statistics & Actions */}
+                <div className="mt-auto space-y-4">
+                  {/* Active Permissions Progress */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-navy uppercase tracking-wider">
+                      <span>Active Privileges</span>
+                      <span className="font-mono text-xs">{activeCount} / {totalPerms} ({percentActive}%)</span>
+                    </div>
+                    <div className="w-full h-2 bg-cream/40 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gold rounded-full transition-all duration-500" 
+                        style={{ width: `${percentActive}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-dashed border-border-cream/80">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-gold' : 'text-slate'}`}>
+                      {isSelected ? 'Currently Selected' : 'Click to Configure'}
+                    </span>
+
+                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      {/* Clone button */}
+                      <button
+                        type="button"
+                        title="Clone role blueprint"
+                        onClick={() => {
+                          setCloningRoleId(r.id);
+                          setCloneRoleName(`Copy of ${r.name}`);
+                          setCloneRoleDesc(r.description || '');
+                          setShowCloneModal(true);
+                        }}
+                        className="p-2 rounded-lg border border-border-cream hover:border-gold hover:bg-gold-pale text-slate hover:text-navy transition-all"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+
+                      {/* Delete button (if not system) */}
+                      {!r.isSystem && (
+                        <button
+                          type="button"
+                          title="Delete custom role blueprint"
+                          onClick={() => handleDeleteRole(r.id, r.name, r.isSystem)}
+                          className="p-2 rounded-lg border border-border-cream hover:border-red-400 hover:bg-red-50 text-danger transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
+            );
+          })}
+        </div>
+      )}
 
-              {/* Matrix Table */}
-              <div className="overflow-x-auto border border-border-cream/40 rounded-2xl">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-border-cream text-[10px] font-bold text-navy uppercase tracking-wider bg-cream/20">
-                      <th className="py-3 px-5 w-1/3">Module / Entity Path</th>
-                      {actions.map(act => (
-                        <th key={act} className="py-3 px-4 text-center capitalize">{act}</th>
-                      ))}
-                      <th className="py-3 px-5 text-right">Quick Control</th>
+      {/* Permissions Matrix section */}
+      {activeRole && (
+        <div className="space-y-6">
+          <div className="soft-card bg-white p-6 space-y-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-border-cream pb-4">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h3 className="font-display font-semibold text-lg text-navy">
+                    Permission Blueprint Matrix: <span className="text-gold font-bold">{activeRole.name}</span>
+                  </h3>
+                  <span className={`text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-full font-bold leading-none ${
+                    activeRole.isSystem 
+                      ? 'bg-navy text-gold-light border border-gold/10' 
+                      : 'bg-gold-pale text-navy border border-gold/30'
+                  }`}>
+                    {activeRole.isSystem ? 'ReadOnly Defaults' : 'Writable Blueprint'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate mt-1">Configure systemic modules and read/write permission flags. Global settings apply templates to new properties.</p>
+              </div>
+
+              {/* Bulk Controls & Matrix Search */}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Search Modules */}
+                <div className="relative w-full sm:w-auto">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate" />
+                  <input
+                    type="text"
+                    placeholder="Search modules..."
+                    value={matrixSearchQuery}
+                    onChange={(e) => setMatrixSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 bg-cream/10 border border-border-cream rounded-lg focus:outline-none focus:border-gold text-[10px] font-semibold text-charcoal placeholder-slate"
+                  />
+                </div>
+
+                {activeRole.name !== 'Tenant Admin' && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleGrantAllPermissions}
+                      className="px-3 py-1.5 bg-navy text-white text-[10px] font-bold uppercase tracking-wider rounded-lg border border-navy hover:bg-navy/90 transition-all flex items-center gap-1.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-gold" /> Grant All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRevokeAllPermissions}
+                      className="px-3 py-1.5 bg-white border border-border-cream text-charcoal text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-cream/20 transition-all"
+                    >
+                      Revoke All
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Matrix Table */}
+            <div className="overflow-x-auto border border-border-cream/40 rounded-2xl">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-border-cream text-[10px] font-bold text-navy uppercase tracking-wider bg-cream/20">
+                    <th className="py-3 px-5 w-1/3">Module / Entity Path</th>
+                    {actions.map(act => (
+                      <th key={act} className="py-3 px-4 text-center capitalize">{act}</th>
+                    ))}
+                    <th className="py-3 px-5 text-right">Quick Control</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-cream/40 text-xs font-semibold">
+                  {filteredModules.length === 0 ? (
+                    <tr>
+                      <td colSpan={actions.length + 2} className="py-8 text-center text-slate text-xs font-semibold">
+                        No modules match your query.
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-cream/40 text-xs font-semibold">
-                    {modules.map((mod) => {
+                  ) : (
+                    filteredModules.map((mod) => {
                       const modulePerms = actions.map(act => `${mod.key}.${act}`);
                       const activeCount = modulePerms.filter(pk => activeRole.permissions.includes(pk)).length;
                       const allChecked = activeCount === actions.length;
@@ -425,21 +689,21 @@ function SuperAdminRBAC() {
                           </td>
                         </tr>
                       );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-              <div className="p-4 bg-cream/35 border border-border-cream/60 rounded-2xl flex items-center gap-3">
-                <FileLock2 className="w-5 h-5 text-gold shrink-0" />
-                <p className="text-[10px] text-slate leading-relaxed">
-                  <span className="font-bold text-navy">Security Policy Override:</span> Pre-loaded global roles serve as the blueprint defaults for new tenants. Individual Tenant Admins can override permissions for custom local roles inside their property, but cannot access unauthorized modules flag-restricted by their billing plan.
-                </p>
-              </div>
+            <div className="p-4 bg-cream/35 border border-border-cream/60 rounded-2xl flex items-center gap-3">
+              <FileLock2 className="w-5 h-5 text-gold shrink-0" />
+              <p className="text-[10px] text-slate leading-relaxed">
+                <span className="font-bold text-navy">Security Policy Override:</span> Pre-loaded global roles serve as the blueprint defaults for new tenants. Individual Tenant Admins can override permissions for custom local roles inside their property, but cannot access unauthorized modules flag-restricted by their billing plan.
+              </p>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ─── MODAL: CREATE GLOBAL ROLE ───────────────────────────────── */}
       {showAddRoleModal && (
@@ -464,7 +728,7 @@ function SuperAdminRBAC() {
                   placeholder="Operational Auditor"
                   value={newRoleName}
                   onChange={(e) => setNewRoleName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold"
+                  className="w-full px-4 py-2.5 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold text-charcoal"
                 />
               </div>
               <div className="space-y-1.5">
@@ -474,7 +738,7 @@ function SuperAdminRBAC() {
                   placeholder="Reviews transaction logs, generates financial compliance reports, and audits inventories."
                   value={newRoleDesc}
                   onChange={(e) => setNewRoleDesc(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold resize-none"
+                  className="w-full px-4 py-2.5 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold resize-none text-charcoal"
                 />
               </div>
 
@@ -492,6 +756,64 @@ function SuperAdminRBAC() {
                   className="w-1/2 px-4 py-2.5 bg-navy disabled:bg-navy/70 text-white hover:bg-navy/90 rounded-xl text-xs font-bold"
                 >
                   {actionLoading ? 'Creating...' : 'Register Global Role'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: CLONE GLOBAL ROLE ───────────────────────────────── */}
+      {showCloneModal && (
+        <div className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2rem] border border-border-cream p-8 w-full max-w-md shadow-2xl space-y-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="font-display font-bold text-navy text-lg">Clone Global Role Blueprint</h4>
+                <p className="text-xs text-slate mt-0.5">Duplicate an existing configuration blueprint into a new template role</p>
+              </div>
+              <button onClick={() => setShowCloneModal(false)}>
+                <X className="w-5 h-5 text-slate" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCloneRole} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-navy uppercase tracking-wider block">New Role Identity Name</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g. Front Office Supervisor"
+                  value={cloneRoleName}
+                  onChange={(e) => setCloneRoleName(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold text-charcoal"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-navy uppercase tracking-wider block">Role Description</label>
+                <textarea 
+                  rows="3"
+                  placeholder="Provide a description detailing the duties of this cloned role blueprint."
+                  value={cloneRoleDesc}
+                  onChange={(e) => setCloneRoleDesc(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold resize-none text-charcoal"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-3">
+                <button 
+                  type="button" 
+                  onClick={() => setShowCloneModal(false)}
+                  className="w-1/2 px-4 py-2.5 border border-border-cream text-charcoal hover:bg-stone-50 rounded-xl text-xs font-bold"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={actionLoading}
+                  className="w-1/2 px-4 py-2.5 bg-navy disabled:bg-navy/70 text-white hover:bg-navy/90 rounded-xl text-xs font-bold"
+                >
+                  {actionLoading ? 'Cloning...' : 'Clone Role Blueprint'}
                 </button>
               </div>
             </form>
