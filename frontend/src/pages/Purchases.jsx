@@ -15,24 +15,26 @@ function Purchases() {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [vendors, setVendors] = useState([]);
+  const [inventory, setInventory] = useState([]);
   const [form, setForm] = useState({
     vendorId: '',
     expectedDate: '',
     notes: '',
-    items: [{ description: '', quantity: 1, unitPrice: 0 }],
+    items: [{ inventoryItemId: '', quantity: 1, unitPrice: 0 }],
   });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchPurchases();
     fetchVendors();
+    fetchInventory();
   }, []);
 
   const fetchPurchases = async () => {
     try {
       setLoading(true);
       const res = await api.get('/purchases');
-      setPurchases(res.data?.data || res.data || []);
+      setPurchases(Array.isArray(res) ? res : res.data?.data || res.data || []);
     } catch { setError('Failed to load purchases'); }
     finally { setLoading(false); }
   };
@@ -40,11 +42,22 @@ function Purchases() {
   const fetchVendors = async () => {
     try {
       const res = await api.get('/vendors');
-      setVendors(res.data?.data || res.data || []);
-    } catch {}
+      setVendors(Array.isArray(res) ? res : res.data?.data || res.data || []);
+    } catch (e) {
+      console.error('fetchVendors error:', e);
+    }
   };
 
-  const addItem = () => setForm(f => ({ ...f, items: [...f.items, { description: '', quantity: 1, unitPrice: 0 }] }));
+  const fetchInventory = async () => {
+    try {
+      const res = await api.get('/inventory');
+      setInventory(Array.isArray(res) ? res : res.data?.data || res.data || []);
+    } catch (e) {
+      console.error('fetchInventory error:', e);
+    }
+  };
+
+  const addItem = () => setForm(f => ({ ...f, items: [...f.items, { inventoryItemId: '', quantity: 1, unitPrice: 0 }] }));
   const removeItem = (i) => setForm(f => ({ ...f, items: f.items.filter((_, idx) => idx !== i) }));
   const updateItem = (i, field, val) => setForm(f => {
     const items = [...f.items];
@@ -58,12 +71,19 @@ function Purchases() {
     e.preventDefault();
     try {
       setSaving(true);
-      await api.post('/purchases', form);
+      const payload = { ...form };
+      if (!payload.vendorId) delete payload.vendorId;
+      payload.items = payload.items.map(item => ({
+        ...item,
+        quantity: parseFloat(item.quantity) || 0,
+        unitPrice: parseFloat(item.unitPrice) || 0
+      }));
+      await api.post('/purchases', payload);
       setShowForm(false);
-      setForm({ vendorId: '', expectedDate: '', notes: '', items: [{ description: '', quantity: 1, unitPrice: 0 }] });
+      setForm({ vendorId: '', expectedDate: '', notes: '', items: [{ inventoryItemId: '', quantity: 1, unitPrice: 0 }] });
       fetchPurchases();
     } catch (e) {
-      setError(e.response?.data?.message || 'Failed to create purchase order');
+      setError(e.message || 'Failed to create purchase order');
     } finally {
       setSaving(false);
     }
@@ -128,24 +148,25 @@ function Purchases() {
 
             {/* Items */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-medium text-slate">Order Items</label>
+              <div className="flex items-center justify-between mb-4">
+                <label className="text-sm font-medium text-slate">Order Items</label>
                 <button type="button" onClick={addItem}
-                  className="text-xs text-gold hover:text-navy font-medium flex items-center gap-1">
-                  <Plus className="w-3 h-3" /> Add Item
+                  className="px-3 py-1.5 bg-navy text-white text-xs font-semibold rounded-lg hover:bg-gold transition-colors flex items-center gap-1 shadow-sm">
+                  <Plus className="w-3.5 h-3.5" /> Add Another Item
                 </button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {form.items.map((item, i) => (
                   <div key={i} className="flex gap-2 items-center">
-                    <input
-                      type="text"
-                      placeholder="Description"
+                    <select
                       required
-                      value={item.description}
-                      onChange={e => updateItem(i, 'description', e.target.value)}
+                      value={item.inventoryItemId}
+                      onChange={e => updateItem(i, 'inventoryItemId', e.target.value)}
                       className="flex-1 px-3 py-2 border border-border-cream rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold/30"
-                    />
+                    >
+                      <option value="">Select item...</option>
+                      {inventory.map(inv => <option key={inv.id} value={inv.id}>{inv.name}</option>)}
+                    </select>
                     <input
                       type="number"
                       placeholder="Qty"

@@ -365,7 +365,7 @@ function Waiter() {
           </div>
         ) : (
           // View 2: POS Menu Ordering Panel
-          <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:min-h-0 overflow-y-auto lg:overflow-hidden pb-4 lg:pb-0">
+          <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:min-h-0 overflow-y-auto lg:overflow-hidden pb-24 lg:pb-0 relative">
             {/* Left panel: categories and items grid */}
             <div className="flex-none lg:flex-1 h-[65vh] lg:h-auto flex flex-col bg-white border border-border-cream rounded-2xl p-4 lg:min-h-0">
               {/* Top drawer header */}
@@ -469,7 +469,7 @@ function Waiter() {
             </div>
 
             {/* Right panel: Cart Checkout details */}
-            <div className="flex-none w-full lg:w-80 bg-white border border-border-cream rounded-2xl p-4 flex flex-col justify-between shrink-0 lg:min-h-0">
+            <div id="pos-cart" className="flex-none w-full lg:w-80 bg-white border border-border-cream rounded-2xl p-4 flex flex-col justify-between shrink-0 lg:min-h-0">
               <div className="flex flex-col lg:min-h-0 flex-1">
                 <div className="flex items-center gap-2 border-b border-border-cream pb-3 shrink-0 text-navy font-display font-semibold text-sm">
                   <ShoppingBag className="w-4 h-4 text-gold" /> Check Order Cart
@@ -541,6 +541,22 @@ function Waiter() {
                 </div>
               )}
             </div>
+
+            {/* Mobile Cart Floating Action Bar */}
+            {cart.length > 0 && (
+              <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border-cream p-4 flex justify-between items-center shadow-[0_-10px_20px_rgba(0,0,0,0.05)] z-40">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-navy">{cart.length} Items Selected</span>
+                  <span className="text-sm font-extrabold text-charcoal">₹{total.toLocaleString()}</span>
+                </div>
+                <button 
+                  onClick={() => document.getElementById('pos-cart')?.scrollIntoView({ behavior: 'smooth' })} 
+                  className="px-6 py-2.5 bg-[#0B1F3A] text-gold rounded-full text-xs font-bold uppercase tracking-wider shadow-md hover:bg-[#142d50] transition-all"
+                >
+                  View Cart
+                </button>
+              </div>
+            )}
           </div>
         )
       ) : (
