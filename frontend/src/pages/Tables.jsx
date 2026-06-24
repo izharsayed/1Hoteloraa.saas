@@ -32,6 +32,7 @@ function Tables() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newTableName, setNewTableName] = useState('');
   const [newTableCapacity, setNewTableCapacity] = useState(4);
+  const [newTableFloor, setNewTableFloor] = useState('Ground Floor');
   const [newTableZone, setNewTableZone] = useState('Main Hall');
 
   const zones = [
@@ -87,13 +88,15 @@ function Tables() {
       await api.post('/tables', {
         name: newTableName.trim(),
         capacity: Number(newTableCapacity),
-        floor: newTableZone,
+        floor: newTableFloor,
         section: newTableZone
       });
       setSuccess(`Table ${newTableName} created successfully.`);
       setIsAddModalOpen(false);
       setNewTableName('');
       setNewTableCapacity(4);
+      setNewTableFloor('Ground Floor');
+      setNewTableZone('Main Hall');
       loadTables();
     } catch (err) {
       setError(err.message || 'Failed to create table');
@@ -309,7 +312,11 @@ function Tables() {
                         <span className="text-[9px] opacity-75 font-semibold mt-0.5">{table.capacity} Pax</span>
                       </div>
                     </div>
-                    <span className="text-[10px] text-slate font-bold uppercase tracking-wider">{table.floor || 'Main Hall'}</span>
+                    <span className="text-[10px] text-slate font-bold uppercase tracking-wider">
+                      {table.floor && table.section && table.floor !== table.section 
+                        ? `${table.floor} • ${table.section}` 
+                        : (table.floor || table.section || 'Main Hall')}
+                    </span>
                   </div>
                 );
               })}
@@ -326,7 +333,11 @@ function Tables() {
                 <div className="flex justify-between items-center border-b border-border-cream pb-4">
                   <div>
                     <h3 className="font-display font-semibold text-lg text-navy">{selectedTable.name}</h3>
-                    <p className="text-[10px] text-slate font-semibold uppercase tracking-wider">{selectedTable.floor || 'Main Hall'}</p>
+                    <p className="text-[10px] text-slate font-semibold uppercase tracking-wider">
+                      {selectedTable.floor && selectedTable.section && selectedTable.floor !== selectedTable.section 
+                        ? `${selectedTable.floor} • ${selectedTable.section}` 
+                        : (selectedTable.floor || selectedTable.section || 'Main Hall')}
+                    </p>
                   </div>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                     selectedTable.status === 'OCCUPIED' ? 'bg-danger-pale text-danger border border-danger/20' : 
@@ -549,7 +560,21 @@ function Tables() {
               </div>
               
               <div>
-                <label className="block text-[10px] font-bold text-slate uppercase tracking-wider mb-1">Zone / Area</label>
+                <label className="block text-[10px] font-bold text-slate uppercase tracking-wider mb-1">Floor</label>
+                <select 
+                  value={newTableFloor}
+                  onChange={(e) => setNewTableFloor(e.target.value)}
+                  className="w-full px-3 py-2 border border-border-cream rounded-xl text-xs focus:outline-none focus:border-gold bg-white"
+                >
+                  <option value="Ground Floor">Ground Floor</option>
+                  <option value="First Floor">First Floor</option>
+                  <option value="Second Floor">Second Floor</option>
+                  <option value="Rooftop">Rooftop</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-[10px] font-bold text-slate uppercase tracking-wider mb-1">Zone / Area (Section)</label>
                 <select 
                   value={newTableZone}
                   onChange={(e) => setNewTableZone(e.target.value)}
@@ -557,9 +582,8 @@ function Tables() {
                 >
                   <option value="Main Hall">Main Hall</option>
                   <option value="Garden Terrace">Garden Terrace</option>
-                  <option value="First Floor">First Floor</option>
-                  <option value="Rooftop">Rooftop</option>
                   <option value="VIP Lounge">VIP Lounge</option>
+                  <option value="Bar Area">Bar Area</option>
                 </select>
               </div>
             </div>
