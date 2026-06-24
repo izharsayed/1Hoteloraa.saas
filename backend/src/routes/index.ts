@@ -30,6 +30,7 @@ import subscriptionsRoutes from '../modules/subscriptions/subscriptions.routes';
 import categoriesRoutes from '../modules/categories/categories.routes';
 import superadminRoutes from '../modules/superadmin/superadmin.routes';
 import notificationsRoutes from '../modules/notifications/notifications.routes';
+import floorsRoutes from '../modules/floors/floors.routes';
 
 const router = Router();
 
@@ -51,6 +52,7 @@ router.use('/orders', orderRoutes);
 router.use('/kot', kotRoutes);
 router.use('/billing', billingRoutes);
 router.use('/pos', posRoutes);
+router.use('/floors', floorsRoutes);
 
 // Lodging
 router.use('/room-types', roomTypeRoutes);
