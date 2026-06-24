@@ -63,7 +63,7 @@ export const createPurchase = async (
   }
 
   // Validate all inventory items belong to tenant
-  const inventoryItemIds = items.map((item) => item.inventoryItemId);
+  const inventoryItemIds = [...new Set(items.map((item) => item.inventoryItemId))];
   const inventoryItems = await prisma.inventoryItem.findMany({
     where: { id: { in: inventoryItemIds }, tenantId, isActive: true },
   });

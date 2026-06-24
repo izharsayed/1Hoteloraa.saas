@@ -43,7 +43,11 @@ function AdminUsers() {
     setError('');
     setSuccess('');
     try {
-      await api.post('/users', { name, email, phone, userRole, password });
+      const payload = { name, email, userRole, password };
+      if (phone.trim() !== '') {
+        payload.phone = phone.trim();
+      }
+      await api.post('/users', payload);
       setSuccess('Staff member onboarded successfully');
       setShowAddForm(false);
       setName('');
@@ -146,9 +150,9 @@ function AdminUsers() {
                 <div>
                   <label className="text-[10px] text-slate font-bold uppercase tracking-wider block mb-1">Password</label>
                   <input 
-                    type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                    type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-2 border border-border-cream rounded-xl text-xs focus:outline-none focus:border-gold"
-                    placeholder="Password"
+                    placeholder="Password (min 6 chars)"
                   />
                 </div>
               </div>
@@ -171,7 +175,7 @@ function AdminUsers() {
               <div>
                 <label className="text-[10px] text-slate font-bold uppercase tracking-wider block mb-1">New Password</label>
                 <input 
-                  type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                  type="password" required minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full px-4 py-2 border border-border-cream rounded-xl text-xs focus:outline-none focus:border-gold"
                   placeholder="Minimum 6 characters"
                 />
