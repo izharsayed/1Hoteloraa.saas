@@ -529,40 +529,13 @@ function Login() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-cream select-none relative overflow-hidden font-sans">
 
-      {/* Background Architectural Blueprint Line Art */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-        <svg
-          width="800"
-          height="800"
-          viewBox="0 0 800 800"
-          fill="none"
-          className="opacity-[0.06] text-navy"
-          stroke="currentColor"
-          strokeWidth="0.8"
-          strokeDasharray="4 4"
-        >
-          <rect x="150" y="150" width="500" height="500" strokeWidth="1.5" strokeDasharray="none" />
-          <rect x="160" y="160" width="480" height="480" />
-          <line x1="450" y1="150" x2="450" y2="650" strokeWidth="1.2" strokeDasharray="none" />
-          <line x1="150" y1="400" x2="450" y2="400" />
-          <rect x="180" y="180" width="100" height="80" />
-          <circle cx="230" cy="220" r="20" />
-          <line x1="280" y1="200" x2="330" y2="200" />
-          <rect x="490" y="280" width="120" height="150" strokeWidth="1.2" strokeDasharray="none" />
-          <rect x="500" y="290" width="45" height="30" />
-          <rect x="555" y="290" width="45" height="30" />
-          <line x1="490" y1="340" x2="610" y2="340" />
-          <circle cx="350" cy="520" r="30" />
-          <rect x="330" y="470" width="40" height="15" rx="4" />
-          <rect x="330" y="555" width="40" height="15" rx="4" />
-          <path d="M 450 480 A 80 80 0 0 1 530 560" strokeWidth="0.8" />
-          <line x1="450" y1="480" x2="450" y2="560" />
-          <line x1="450" y1="560" x2="530" y2="560" />
-          <path d="M 450 220 A 60 60 0 0 0 390 160" strokeWidth="0.8" />
-          <line x1="450" y1="220" x2="450" y2="160" />
-          <line x1="450" y1="160" x2="390" y2="160" />
-        </svg>
-      </div>
+      {/* Premium Background Image */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 scale-105"
+        style={{ backgroundImage: "url('/login_bg.png')" }}
+      />
+      {/* Luxury Color Overlay for Contrast & Glassmorphism Blur */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-tr from-navy/50 via-navy/15 to-gold/20 backdrop-blur-[2px]" />
 
       {/* Toast */}
       {toast && (
@@ -574,9 +547,9 @@ function Login() {
         </div>
       )}
 
-      {/* Main Card */}
-      <div className="w-full max-w-[440px] z-10">
-        <div className="bg-white border border-border-cream rounded-[2rem] p-8 md:p-10 shadow-xl shadow-stone-200/40 flex flex-col items-center">
+      {/* Main Card with Premium Glassmorphism */}
+      <div className="w-full max-w-[440px] z-10 transition-all duration-500 hover:scale-[1.01]">
+        <div className="bg-white/85 backdrop-blur-lg border border-white/40 rounded-[2rem] p-8 md:p-10 shadow-2xl shadow-navy/10 flex flex-col items-center">
 
           {/* Brand Header — always visible */}
           <img src="/logo.png" alt="Hoteloraa Logo" className="h-11 w-auto object-contain mb-3 select-none" />

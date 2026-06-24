@@ -55,40 +55,73 @@ const taskInclude = {
   return task;
 }; exports.getTaskById = getTaskById;
 
+const roomLocks = new Map();
+
 // ────────────────────────────────────────────────────────────────
 // CREATE TASK
 // ────────────────────────────────────────────────────────────────
  const createTask = async (tenantId, dto) => {
-  // Verify room belongs to tenant
-  const room = await _database2.default.room.findFirst({ where: { id: dto.roomId, tenantId } });
-  if (!room) {
-    throw _errormiddleware.createError.call(void 0, 'Room not found', 404);
-  }
+  const roomId = dto.roomId;
+  const existingPromise = roomLocks.get(roomId) || Promise.resolve();
+  let resolveLock;
+  const newPromise = new Promise(resolve => {
+    resolveLock = resolve;
+  });
+  roomLocks.set(roomId, newPromise);
+  await existingPromise;
 
-  // Verify assignee belongs to tenant (if provided)
-  if (dto.assignedTo) {
-    const user = await _database2.default.user.findFirst({
-      where: { id: dto.assignedTo, tenantId, isActive: true },
+  try {
+    // Verify room belongs to tenant
+    const room = await _database2.default.room.findFirst({ where: { id: dto.roomId, tenantId } });
+    if (!room) {
+      throw _errormiddleware.createError.call(void 0, 'Room not found', 404);
+    }
+
+    // Verify assignee belongs to tenant (if provided)
+    if (dto.assignedTo) {
+      const user = await _database2.default.user.findFirst({
+        where: { id: dto.assignedTo, tenantId, isActive: true },
+      });
+      if (!user) {
+        throw _errormiddleware.createError.call(void 0, 'Assigned user not found or inactive', 404);
+      }
+    }
+
+    // Check if an active task of this type already exists for this room to prevent duplicates
+    const activeTask = await _database2.default.housekeeping.findFirst({
+      where: {
+        tenantId,
+        roomId: dto.roomId,
+        taskType: dto.taskType,
+        status: { in: ['PENDING', 'IN_PROGRESS'] },
+      },
+      include: taskInclude,
     });
-    if (!user) {
-      throw _errormiddleware.createError.call(void 0, 'Assigned user not found or inactive', 404);
+
+    if (activeTask) {
+      return activeTask;
+    }
+
+    const task = await _database2.default.housekeeping.create({
+      data: {
+        tenantId,
+        roomId: dto.roomId,
+        assignedTo: _nullishCoalesce(dto.assignedTo, () => ( null)),
+        taskType: dto.taskType,
+        notes: _nullishCoalesce(dto.notes, () => ( null)),
+        scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+        status: 'PENDING',
+      },
+      include: taskInclude,
+    });
+
+    return task;
+  } finally {
+    resolveLock();
+    if (roomLocks.get(roomId) === newPromise) {
+      roomLocks.delete(roomId);
     }
   }
-
-  const task = await _database2.default.housekeeping.create({
-    data: {
-      tenantId,
-      roomId: dto.roomId,
-      assignedTo: _nullishCoalesce(dto.assignedTo, () => ( null)),
-      taskType: dto.taskType,
-      notes: _nullishCoalesce(dto.notes, () => ( null)),
-      scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
-      status: 'PENDING',
-    },
-    include: taskInclude,
-  });
-
-  return task;
 }; exports.createTask = createTask;
 
 // ────────────────────────────────────────────────────────────────

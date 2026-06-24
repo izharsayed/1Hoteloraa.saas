@@ -202,7 +202,7 @@ var _errormiddleware = require('../../middleware/error.middleware');
   const bookedRoomIds = await _database2.default.reservation.findMany({
     where: {
       tenantId,
-      status: { in: ['CONFIRMED', 'CHECKED_IN'] },
+      status: { in: ['PENDING', 'CONFIRMED', 'CHECKED_IN'] },
       AND: [
         { checkInDate: { lt: checkOut } },
         { checkOutDate: { gt: checkIn } },
@@ -217,7 +217,7 @@ var _errormiddleware = require('../../middleware/error.middleware');
     where: {
       tenantId,
       isActive: true,
-      status: { in: ['AVAILABLE', 'CLEANING'] },
+      status: { not: 'MAINTENANCE' },
       id: { notIn: bookedIds },
     },
     include: {

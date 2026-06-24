@@ -15,6 +15,16 @@ var _errormiddleware = require('../../middleware/error.middleware');
           roomType: true,
         },
       },
+      orders: {
+        where: { status: { not: 'CANCELLED' } },
+        select: {
+          id: true,
+          orderNumber: true,
+          status: true,
+          totalAmount: true,
+          createdAt: true,
+        },
+      },
     },
     orderBy: {
       checkOutDate: 'asc',
