@@ -140,7 +140,8 @@ function SuperAdminUsers() {
   }
 
   return (
-    <div className="space-y-8 animate-fadeIn relative">
+    <>
+      <div className="space-y-8 animate-fadeIn relative">
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-50 bg-navy border border-gold text-white px-5 py-3 rounded-2xl flex items-center gap-3 shadow-xl shadow-stone-900/10 animate-slideIn">
@@ -164,7 +165,7 @@ function SuperAdminUsers() {
         <div className="soft-card p-6 bg-white flex justify-between items-center">
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-slate uppercase tracking-wider">Total Platform Users</p>
-            <h3 className="font-display font-bold text-2xl text-navy">{users.length}</h3>
+            <h3 className="font-sans font-bold text-2xl text-navy tracking-tight">{users.length}</h3>
             <span className="text-[10px] text-slate font-medium">System-wide staff accounts</span>
           </div>
           <div className="w-12 h-12 bg-cream rounded-2xl flex items-center justify-center border border-border-cream/50 text-gold">
@@ -175,7 +176,7 @@ function SuperAdminUsers() {
         <div className="soft-card p-6 bg-white flex justify-between items-center">
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-slate uppercase tracking-wider">Active Staffs</p>
-            <h3 className="font-display font-bold text-2xl text-success">
+            <h3 className="font-sans font-bold text-2xl text-success tracking-tight">
               {users.filter(u => u.isActive).length}
             </h3>
             <span className="text-[10px] text-slate font-medium">Operational status active</span>
@@ -188,7 +189,7 @@ function SuperAdminUsers() {
         <div className="soft-card p-6 bg-white flex justify-between items-center">
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-slate uppercase tracking-wider">Suspended Staffs</p>
-            <h3 className="font-display font-bold text-2xl text-danger">
+            <h3 className="font-sans font-bold text-2xl text-danger tracking-tight">
               {users.filter(u => !u.isActive).length}
             </h3>
             <span className="text-[10px] text-slate font-medium">Access revoked nodes</span>
@@ -201,7 +202,9 @@ function SuperAdminUsers() {
         <div className="soft-card p-6 bg-white flex justify-between items-center">
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-slate uppercase tracking-wider">Live Logged In</p>
-            <h3 className="font-display font-bold text-2xl text-navy">5 Sessions</h3>
+            <h3 className="font-sans font-bold text-2xl text-navy tracking-tight">
+              5 <span className="text-xs font-semibold text-slate font-sans uppercase tracking-wider">Sessions</span>
+            </h3>
             <span className="text-[10px] text-success font-bold animate-pulse">● Online heartbeat sync</span>
           </div>
           <div className="w-12 h-12 bg-cream rounded-2xl flex items-center justify-center border border-border-cream/50 text-gold">
@@ -297,46 +300,48 @@ function SuperAdminUsers() {
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-slate font-mono font-medium">{user.lastLogin}</td>
-                  <td className="py-3.5 px-4 text-right space-x-1.5">
-                    {/* View User Activity */}
-                    <button 
-                      onClick={() => handleViewActivity(user)}
-                      className="text-navy hover:text-navy/80 p-1.5 border border-border-cream hover:border-gold rounded-lg hover:bg-cream/10 transition-all inline-flex items-center gap-1 text-[10px] font-bold"
-                      title="User Audit Trail"
-                    >
-                      <History className="w-3.5 h-3.5 text-gold" /> Log
-                    </button>
-                    {/* Reset Password */}
-                    <button 
-                      onClick={() => {
-                        setSelectedUser(user);
-                        setShowPasswordModal(true);
-                      }}
-                      className="p-1.5 border border-border-cream hover:border-navy rounded-lg text-slate hover:text-navy transition-all"
-                      title="Reset Password"
-                    >
-                      <Key className="w-3.5 h-3.5" />
-                    </button>
-                    {/* Force Logout */}
-                    <button 
-                      onClick={() => handleForceLogout(user.name)}
-                      className="p-1.5 border border-border-cream hover:border-red-500 rounded-lg text-slate hover:text-red-500 transition-all"
-                      title="Force Logout Session"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                    </button>
-                    {/* Toggle Active Status */}
-                    <button
-                      onClick={() => handleToggleUserStatus(user.id, user.name, user.isActive)}
-                      className={`p-1.5 rounded-lg border transition-all ${
-                        user.isActive
-                          ? 'border-red-100 text-red-500 hover:bg-red-50'
-                          : 'border-green-100 text-green-500 hover:bg-green-50'
-                      }`}
-                      title={user.isActive ? 'Disable User' : 'Enable User'}
-                    >
-                      {user.isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-                    </button>
+                  <td className="py-3.5 px-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {/* View User Activity */}
+                      <button 
+                        onClick={() => handleViewActivity(user)}
+                        className="w-8 h-8 rounded-xl border border-border-cream text-gold hover:border-gold hover:bg-gold/5 flex items-center justify-center transition-all duration-200"
+                        title="User Audit Trail"
+                      >
+                        <History className="w-4 h-4" />
+                      </button>
+                      {/* Reset Password */}
+                      <button 
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setShowPasswordModal(true);
+                        }}
+                        className="w-8 h-8 rounded-xl border border-border-cream text-slate hover:text-navy hover:border-navy hover:bg-navy/5 flex items-center justify-center transition-all duration-200"
+                        title="Reset Password"
+                      >
+                        <Key className="w-4 h-4" />
+                      </button>
+                      {/* Force Logout */}
+                      <button 
+                        onClick={() => handleForceLogout(user.name)}
+                        className="w-8 h-8 rounded-xl border border-border-cream text-slate hover:text-danger hover:border-danger hover:bg-danger/5 flex items-center justify-center transition-all duration-200"
+                        title="Force Logout Session"
+                      >
+                        <LogOut className="w-4 h-4" />
+                      </button>
+                      {/* Toggle Active Status */}
+                      <button
+                        onClick={() => handleToggleUserStatus(user.id, user.name, user.isActive)}
+                        className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-200 ${
+                          user.isActive
+                            ? 'border-danger/10 text-danger hover:bg-danger/5 hover:border-danger'
+                            : 'border-success/10 text-success hover:bg-success/5 hover:border-success'
+                        }`}
+                        title={user.isActive ? 'Disable User' : 'Enable User'}
+                      >
+                        {user.isActive ? <ToggleRight className="w-4.5 h-4.5" /> : <ToggleLeft className="w-4.5 h-4.5" />}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -351,18 +356,22 @@ function SuperAdminUsers() {
           </table>
         </div>
       </div>
+    </div> {/* Close animate-fadeIn container */}
 
       {/* ─── MODAL: RESET PASSWORD ─────────────────────────────────── */}
       {showPasswordModal && selectedUser && (
-        <div className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2rem] border border-border-cream p-8 w-full max-w-md shadow-2xl space-y-6">
+        <div className="fixed inset-0 z-50 bg-navy/60 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white/95 backdrop-blur-xl rounded-[2rem] border border-border-cream/80 p-8 w-full max-w-md shadow-2xl shadow-navy/20 space-y-6 animate-modal-pop">
             <div className="flex justify-between items-start">
               <div>
                 <h4 className="font-display font-bold text-navy text-lg">Reset User Password</h4>
                 <p className="text-xs text-slate mt-0.5 font-medium">Override credentials for: <span className="font-bold text-navy">{selectedUser.name}</span></p>
               </div>
-              <button onClick={() => setShowPasswordModal(false)}>
-                <X className="w-5 h-5 text-slate" />
+              <button 
+                onClick={() => setShowPasswordModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-cream flex items-center justify-center transition-colors text-slate hover:text-navy"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -375,7 +384,7 @@ function SuperAdminUsers() {
                   placeholder="••••••••"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold font-mono"
+                  className="w-full px-4 py-2.5 glass-input rounded-xl focus:outline-none focus:border-gold text-xs font-semibold font-mono"
                 />
               </div>
 
@@ -383,13 +392,13 @@ function SuperAdminUsers() {
                 <button 
                   type="button" 
                   onClick={() => setShowPasswordModal(false)}
-                  className="w-1/2 px-4 py-2.5 border border-border-cream text-charcoal hover:bg-stone-50 rounded-xl text-xs font-bold"
+                  className="w-1/2 px-4 py-2.5 border border-border-cream text-charcoal hover:bg-stone-50 rounded-xl text-xs font-bold transition-all active:scale-95 duration-200"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
-                  className="w-1/2 px-4 py-2.5 bg-navy text-white hover:bg-navy/90 rounded-xl text-xs font-bold"
+                  className="w-1/2 px-4 py-2.5 bg-navy text-white hover:bg-navy/95 rounded-xl text-xs font-bold shadow-md shadow-navy/10 hover:shadow-navy/20 transition-all active:scale-95 duration-200"
                 >
                   Confirm Reset
                 </button>
@@ -401,21 +410,24 @@ function SuperAdminUsers() {
 
       {/* ─── MODAL: USER ACTIVITY DRILL DOWN ────────────────────────── */}
       {showActivityDrawer && selectedUser && (
-        <div className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2rem] border border-border-cream p-8 w-full max-w-lg shadow-2xl space-y-6">
-            <div className="flex justify-between items-start border-b border-border-cream pb-3">
+        <div className="fixed inset-0 z-50 bg-navy/60 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white/95 backdrop-blur-xl rounded-[2rem] border border-border-cream/80 p-8 w-full max-w-lg shadow-2xl shadow-navy/20 space-y-6 animate-modal-pop">
+            <div className="flex justify-between items-start border-b border-border-cream/60 pb-4">
               <div>
                 <h4 className="font-display font-bold text-navy text-lg">{selectedUser.name} Activity Audit</h4>
                 <p className="text-xs text-slate mt-0.5">Recent actions performed under tenant: <span className="font-bold text-navy">{selectedUser.tenant}</span></p>
               </div>
-              <button onClick={() => setShowActivityDrawer(false)}>
-                <X className="w-5 h-5 text-slate" />
+              <button 
+                onClick={() => setShowActivityDrawer(false)}
+                className="w-8 h-8 rounded-full hover:bg-cream flex items-center justify-center transition-colors text-slate hover:text-navy"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
               {userActivities.map(activity => (
-                <div key={activity.id} className="p-4 bg-cream/30 border border-border-cream/50 rounded-2xl text-xs space-y-2">
+                <div key={activity.id} className="p-4 bg-cream/20 hover:bg-cream/40 border border-border-cream/40 hover:border-gold/30 rounded-2xl text-xs space-y-2 transition-all duration-200">
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-navy">{activity.action}</span>
                     <span className="text-[10px] text-slate font-mono">{activity.time}</span>
@@ -431,19 +443,19 @@ function SuperAdminUsers() {
               )}
             </div>
 
-            <div className="flex pt-3 border-t border-border-cream">
+            <div className="flex pt-3 border-t border-border-cream/60">
               <button 
                 type="button" 
                 onClick={() => setShowActivityDrawer(false)}
-                className="w-full btn-secondary py-2.5 text-xs font-bold"
+                className="w-full px-4 py-2.5 border border-border-cream text-charcoal hover:bg-stone-50 rounded-xl text-xs font-bold transition-all active:scale-95 duration-200"
               >
-                Close Audit Drawer
+                Close Audit Trail
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
