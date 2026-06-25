@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Check, ArrowLeft, KeyRound, RefreshCw, ShieldCheck, Copy, CopyCheck } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Check, ArrowLeft, KeyRound, RefreshCw, ShieldCheck, Copy, CopyCheck, ChevronDown, Sparkles } from 'lucide-react';
 import api from '../utils/api.js';
 
 // Role → redirect path mapping (single source of truth)
@@ -125,14 +125,14 @@ function ForgotStep({ onBack, onCodeReceived }) {
   // If we got a token, show the "code reveal" screen
   if (result) {
     return (
-      <div className="w-full flex flex-col items-center gap-5 animate-fadeIn">
+      <div className="w-full flex flex-col items-center gap-5">
         {/* Success header */}
         <div className="flex flex-col items-center gap-2 text-center">
-          <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mb-1">
-            <ShieldCheck className="w-7 h-7 text-emerald-500" strokeWidth={1.5} />
+          <div className="w-14 h-14 rounded-full bg-emerald-50/50 border border-emerald-200/50 flex items-center justify-center mb-1">
+            <ShieldCheck className="w-6 h-6 text-emerald-600" strokeWidth={1.5} />
           </div>
-          <h4 className="font-display font-semibold text-lg text-charcoal">Reset Code Generated</h4>
-          <p className="text-slate text-[11px] leading-relaxed max-w-[280px]">
+          <h4 className="font-display font-medium text-2xl text-slate-900">Reset Code Generated</h4>
+          <p className="text-slate-800 text-[11px] font-bold leading-relaxed max-w-[280px]">
             {result.userName
               ? `Hello ${result.userName}! Your one-time reset code is below.`
               : 'If that email is registered, a code has been generated.'}
@@ -142,8 +142,8 @@ function ForgotStep({ onBack, onCodeReceived }) {
         {result.resetToken ? (
           <>
             {/* Token display box */}
-            <div className="w-full bg-navy/5 border border-navy/20 rounded-2xl p-4 flex flex-col items-center gap-2">
-              <p className="text-[10px] font-bold text-slate/70 uppercase tracking-widest">Your Reset Code</p>
+            <div className="w-full bg-navy/5 border border-navy/10 rounded-2xl p-4 flex flex-col items-center gap-2">
+              <p className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Your Reset Code</p>
               <div className="flex items-center gap-3">
                 <span className="font-mono text-3xl font-black text-[#0B1F3A] tracking-[0.3em] select-all">
                   {result.resetToken}
@@ -152,14 +152,14 @@ function ForgotStep({ onBack, onCodeReceived }) {
                   type="button"
                   onClick={handleCopy}
                   title="Copy code"
-                  className="p-1.5 rounded-lg bg-white border border-border-cream hover:border-gold/50 text-slate hover:text-gold transition-all active:scale-95"
+                  className="p-1.5 rounded-lg bg-white/50 border border-white/60 hover:border-gold/50 text-slate-900 hover:text-gold transition-all active:scale-95"
                 >
                   {copied
                     ? <CopyCheck className="w-4 h-4 text-emerald-500" />
                     : <Copy className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-[10px] text-slate/60">
+              <p className="text-[10px] text-slate-800 font-semibold">
                 ⏱ Expires in <span className="font-bold text-amber-600">{result.expiresIn || '15 minutes'}</span>
               </p>
             </div>
@@ -180,7 +180,7 @@ function ForgotStep({ onBack, onCodeReceived }) {
           </>
         ) : (
           // Email not found — generic message shown
-          <div className="w-full bg-slate-50 border border-border-cream rounded-2xl p-4 text-center text-[11px] text-slate leading-relaxed">
+          <div className="w-full bg-white/40 border border-white/40 rounded-2xl p-4 text-center text-[11px] text-slate-800 font-medium leading-relaxed">
             If an account with that email exists, a reset code would be sent there.
           </div>
         )}
@@ -188,7 +188,7 @@ function ForgotStep({ onBack, onCodeReceived }) {
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1.5 text-[11px] font-semibold text-slate hover:text-navy transition-colors"
+          className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800 hover:text-navy transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to Sign In
@@ -198,14 +198,14 @@ function ForgotStep({ onBack, onCodeReceived }) {
   }
 
   return (
-    <div className="w-full flex flex-col items-center gap-5 animate-fadeIn">
+    <div className="w-full flex flex-col items-center gap-5">
       {/* Header */}
       <div className="flex flex-col items-center gap-1.5 text-center">
-        <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center mb-1">
-          <KeyRound className="w-7 h-7 text-blue-500" strokeWidth={1.5} />
+        <div className="w-14 h-14 rounded-full bg-navy/5 border border-navy/10 flex items-center justify-center mb-1">
+          <KeyRound className="w-6 h-6 text-navy" strokeWidth={1.5} />
         </div>
-        <h4 className="font-display font-semibold text-lg text-charcoal">Forgot Password?</h4>
-        <p className="text-slate text-[11px] leading-relaxed max-w-[280px]">
+        <h4 className="font-display font-medium text-2xl text-slate-900">Forgot Password?</h4>
+        <p className="text-slate-800 text-[11px] font-bold leading-relaxed max-w-[280px]">
           Enter your email address and we'll generate a secure reset code for you.
         </p>
       </div>
@@ -228,7 +228,7 @@ function ForgotStep({ onBack, onCodeReceived }) {
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
             autoFocus
-            className="w-full pl-11 pr-4 py-3.5 bg-white border border-border-cream rounded-full focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-xs font-semibold text-charcoal placeholder-slate/50 transition-all"
+            className="w-full pl-11 pr-4 py-3.5 glass-input rounded-full text-xs font-semibold placeholder-slate/50 transition-all"
             placeholder="Your registered email address"
           />
         </div>
@@ -247,7 +247,7 @@ function ForgotStep({ onBack, onCodeReceived }) {
       <button
         type="button"
         onClick={onBack}
-        className="flex items-center gap-1.5 text-[11px] font-semibold text-slate hover:text-navy transition-colors"
+        className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800 hover:text-navy transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to Sign In
@@ -293,14 +293,14 @@ function ResetStep({ prefillToken, onBack, onSuccess }) {
   };
 
   return (
-    <div className="w-full flex flex-col items-center gap-5 animate-fadeIn">
+    <div className="w-full flex flex-col items-center gap-5">
       {/* Header */}
       <div className="flex flex-col items-center gap-1.5 text-center">
-        <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mb-1">
-          <Lock className="w-7 h-7 text-emerald-500" strokeWidth={1.5} />
+        <div className="w-14 h-14 rounded-full bg-navy/5 border border-navy/10 flex items-center justify-center mb-1">
+          <Lock className="w-6 h-6 text-navy" strokeWidth={1.5} />
         </div>
-        <h4 className="font-display font-semibold text-lg text-charcoal">Set New Password</h4>
-        <p className="text-slate text-[11px] leading-relaxed max-w-[280px]">
+        <h4 className="font-display font-medium text-2xl text-slate-900">Set New Password</h4>
+        <p className="text-slate-800 text-[11px] font-bold leading-relaxed max-w-[280px]">
           Enter your reset code and choose a strong new password.
         </p>
       </div>
@@ -322,7 +322,7 @@ function ResetStep({ prefillToken, onBack, onSuccess }) {
             required
             value={token}
             onChange={(e) => setToken(e.target.value.toUpperCase())}
-            className="w-full pl-11 pr-4 py-3.5 bg-white border border-border-cream rounded-full focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold font-mono text-sm font-black text-charcoal placeholder-slate/40 tracking-widest transition-all text-center uppercase"
+            className="w-full pl-11 pr-4 py-3.5 glass-input rounded-full font-mono text-sm font-black placeholder-slate/40 tracking-widest transition-all text-center uppercase"
             placeholder="RESET CODE"
             maxLength={8}
             autoFocus={!prefillToken}
@@ -340,7 +340,7 @@ function ResetStep({ prefillToken, onBack, onSuccess }) {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             autoComplete="new-password"
-            className="w-full pl-11 pr-11 py-3.5 bg-white border border-border-cream rounded-full focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-xs font-semibold text-charcoal placeholder-slate/50 transition-all"
+            className="w-full pl-11 pr-11 py-3.5 glass-input rounded-full text-xs font-semibold placeholder-slate/50 transition-all"
             placeholder="New password (min. 6 characters)"
           />
           <button
@@ -390,12 +390,12 @@ function ResetStep({ prefillToken, onBack, onSuccess }) {
             value={confirmPass}
             onChange={(e) => setConfirmPass(e.target.value)}
             autoComplete="new-password"
-            className={`w-full pl-11 pr-11 py-3.5 bg-white border rounded-full focus:outline-none text-xs font-semibold text-charcoal placeholder-slate/50 transition-all ${
+            className={`w-full pl-11 pr-11 py-3.5 glass-input rounded-full text-xs font-semibold placeholder-slate/50 transition-all ${
               confirmPass
                 ? passwordsMatch
-                  ? 'border-emerald-400 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-300'
-                  : 'border-red-400 focus:border-red-400 focus:ring-1 focus:ring-red-300'
-                : 'border-border-cream focus:border-gold focus:ring-1 focus:ring-gold'
+                  ? 'border-emerald-500 focus:ring-emerald-300 focus:bg-white/60'
+                  : 'border-red-400 focus:ring-red-300 focus:bg-white/60'
+                : ''
             }`}
             placeholder="Confirm new password"
           />
@@ -430,7 +430,7 @@ function ResetStep({ prefillToken, onBack, onSuccess }) {
       <button
         type="button"
         onClick={onBack}
-        className="flex items-center gap-1.5 text-[11px] font-semibold text-slate hover:text-navy transition-colors"
+        className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800 hover:text-navy transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to Forgot Password
@@ -454,6 +454,7 @@ function Login() {
   const [error, setError]               = useState('');
   const [loading, setLoading]           = useState(false);
   const [activeRole, setActiveRole]     = useState(null);
+  const [demoDropdownOpen, setDemoDropdownOpen] = useState(false);
 
   // Toast notifications
   const [toast, setToast] = useState(null); // { type: 'success'|'info', message }
@@ -466,10 +467,15 @@ function Login() {
       setToast({ type: 'success', message: 'Logged out successfully' });
       // Clean the URL so it doesn't persist on refresh
       window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (toast) {
       const timer = setTimeout(() => setToast(null), 4000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [toast]);
 
   // Pre-fill token from forgot step
   const [prefillToken, setPrefillToken] = useState('');
@@ -532,10 +538,14 @@ function Login() {
       {/* Premium Background Image */}
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 scale-105"
-        style={{ backgroundImage: "url('/login_bg.png')" }}
+        style={{ backgroundImage: "url('/new_login_bg.png')" }}
       />
       {/* Luxury Color Overlay for Contrast & Glassmorphism Blur */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-tr from-navy/50 via-navy/15 to-gold/20 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 z-0 bg-gradient-to-tr from-navy/60 via-navy/20 to-gold/25" />
+
+      {/* Liquid Glass Glowing Ambient Blobs */}
+      <div className="absolute top-[35%] left-[38%] w-[280px] h-[280px] bg-gold/20 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+      <div className="absolute bottom-[30%] right-[32%] w-[320px] h-[320px] bg-navy/30 rounded-full blur-[90px] translate-x-1/2 translate-y-1/2 pointer-events-none" />
 
       {/* Toast */}
       {toast && (
@@ -547,21 +557,21 @@ function Login() {
         </div>
       )}
 
-      {/* Main Card with Premium Glassmorphism */}
+      {/* Main Card with Premium Liquid Glass */}
       <div className="w-full max-w-[440px] z-10 transition-all duration-500 hover:scale-[1.01]">
-        <div className="bg-white/85 backdrop-blur-lg border border-white/40 rounded-[2rem] p-8 md:p-10 shadow-2xl shadow-navy/10 flex flex-col items-center">
+        <div className="liquid-glass rounded-[2rem] p-8 md:p-10 shadow-2xl flex flex-col items-center">
 
           {/* Brand Header — always visible */}
-          <img src="/logo.png" alt="Hoteloraa Logo" className="h-11 w-auto object-contain mb-3 select-none" />
-          <span className="px-3.5 py-0.5 border border-[#D4AF37] text-[9px] font-bold text-[#D4AF37] rounded-full tracking-widest uppercase mb-4 bg-white select-none">
+          <img src="/logo.png" alt="Hoteloraa Logo" className="h-16 w-auto object-contain mb-4 select-none" />
+          <span className="px-3.5 py-0.5 border border-[#D4AF37]/40 text-[9px] font-bold text-[#D4AF37] rounded-full tracking-widest uppercase mb-4 bg-[#D4AF37]/10 select-none">
             Staff Portal
           </span>
 
           {/* ── STEP 1: Normal Login ──────────────────────────────────────── */}
           {view === 'login' && (
             <>
-              <h3 className="font-display font-medium text-3xl text-charcoal tracking-tight mt-1 mb-1">Welcome Back!</h3>
-              <p className="text-slate text-xs font-semibold text-center mb-6">Sign in to your property management software</p>
+              <h3 className="font-display font-medium text-4xl text-slate-900 tracking-tight mt-2 mb-1">Welcome Back</h3>
+              <p className="text-slate-800 text-xs font-semibold tracking-wide text-center mb-6">Sign in to your property management software</p>
 
               {error && (
                 <div className="w-full mb-4 p-3 bg-danger-pale border border-danger/20 rounded-xl text-danger text-[11px] font-bold text-center">
@@ -581,7 +591,7 @@ function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
-                    className="w-full pl-11 pr-4 py-3.5 bg-white border border-border-cream rounded-full focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-xs font-semibold text-charcoal placeholder-slate/50 transition-all"
+                    className="w-full pl-11 pr-4 py-3.5 glass-input rounded-full text-xs font-semibold placeholder-slate/50 transition-all"
                     placeholder="Email address"
                   />
                 </div>
@@ -597,7 +607,7 @@ function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="current-password"
-                    className="w-full pl-11 pr-11 py-3.5 bg-white border border-border-cream rounded-full focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-xs font-semibold text-charcoal placeholder-slate/50 transition-all"
+                    className="w-full pl-11 pr-11 py-3.5 glass-input rounded-full text-xs font-semibold placeholder-slate/50 transition-all"
                     placeholder="Password"
                   />
                   <button
@@ -610,23 +620,23 @@ function Login() {
                 </div>
 
                 {/* Remember me & forgot */}
-                <div className="flex items-center justify-between text-xs font-bold text-charcoal pt-1 pb-2">
+                <div className="flex items-center justify-between text-xs font-bold text-navy pt-1 pb-2">
                   <div className="flex items-center">
                     <input
                       id="remember-me"
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-border-cream text-navy focus:ring-gold accent-gold cursor-pointer"
+                      className="h-3.5 w-3.5 rounded border-white/40 text-navy focus:ring-gold accent-gold cursor-pointer bg-white/20"
                     />
-                    <label htmlFor="remember-me" className="ml-2 font-semibold text-slate cursor-pointer text-[11px]">
+                    <label htmlFor="remember-me" className="ml-2 font-medium text-navy/70 cursor-pointer text-[11px]">
                       Remember Me
                     </label>
                   </div>
                   <button
                     type="button"
                     onClick={() => { setError(''); setView('forgot'); }}
-                    className="text-[11px] font-semibold text-charcoal hover:text-gold hover:underline transition-colors"
+                    className="text-[11px] font-semibold text-navy hover:text-gold hover:underline transition-colors"
                   >
                     Forgot Password?
                   </button>
@@ -636,7 +646,7 @@ function Login() {
                 <button
                   type="submit"
                   disabled={anyLoading}
-                  className="w-full py-3.5 bg-[#0B1F3A] hover:bg-[#142d50] disabled:bg-[#0B1F3A]/70 text-white rounded-full font-bold text-xs tracking-wider transition-all shadow-md active:scale-[0.98] uppercase"
+                  className="w-full py-3.5 bg-[#0B1F3A] hover:bg-[#142d50] disabled:bg-[#0B1F3A]/70 text-white rounded-full font-semibold text-sm tracking-wider transition-all shadow-md active:scale-[0.98] uppercase"
                 >
                   {loading ? 'Signing In...' : 'Sign In'}
                 </button>
@@ -645,45 +655,66 @@ function Login() {
               {/* Divider */}
               <div className="relative w-full my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border-cream/80"></div>
+                  <div className="w-full border-t border-white/20"></div>
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-white px-3 text-slate font-bold uppercase tracking-widest text-[9px]">
+                  <span className="bg-white/50 backdrop-blur-md px-3 py-0.5 text-slate-800 font-extrabold uppercase tracking-widest text-[9px] rounded-full border border-white/30">
                     Quick Demo Access
                   </span>
                 </div>
               </div>
 
-              {/* Demo Role Grid */}
-              <div className="grid grid-cols-3 gap-2 w-full">
-                {demoRoles.map((role) => {
-                  const isThisLoading = activeRole === role.name;
-                  return (
-                    <button
-                      key={role.name}
-                      type="button"
-                      onClick={() => handleRoleSelect(role)}
-                      disabled={anyLoading}
-                      title={`Login as ${role.name}\n${role.email}`}
-                      className="relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-2xl border border-border-cream bg-white hover:shadow-md hover:-translate-y-0.5 hover:border-gold/40 transition-all duration-200 group disabled:opacity-60 disabled:cursor-not-allowed overflow-hidden"
-                    >
-                      <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-2xl bg-gradient-to-r ${role.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
-                      {isThisLoading ? (
-                        <div className="w-8 h-8 rounded-xl border-2 border-slate/20 border-t-slate/60 animate-spin mt-1" />
-                      ) : (
-                        <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${role.color} flex items-center justify-center text-white text-[10px] font-black mt-1 shadow-sm`}>
-                          {role.badge}
-                        </div>
-                      )}
-                      <span className="text-[11px] font-bold text-charcoal leading-tight text-center">{role.name}</span>
-                      <span className="text-[9px] text-slate/70 leading-tight text-center">{role.desc}</span>
-                    </button>
-                  );
-                })}
+              {/* Custom Demo Dropdown */}
+              <div className="relative w-full">
+                <button
+                  type="button"
+                  onClick={() => setDemoDropdownOpen(!demoDropdownOpen)}
+                  disabled={anyLoading}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-full glass-input text-xs font-bold text-slate-900 transition-all hover:bg-white/60 active:scale-[0.99] border border-white/40"
+                >
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+                    {activeRole ? `Logging in as ${activeRole}...` : 'Select Demo Account...'}
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-800 transition-transform duration-200 ${demoDropdownOpen ? 'transform rotate-180' : ''}`} />
+                </button>
+
+                {demoDropdownOpen && (
+                  <div className="absolute left-0 right-0 bottom-full mb-2 z-50 rounded-2xl border border-white/50 bg-white/95 backdrop-blur-xl shadow-2xl p-2 space-y-1 max-h-56 overflow-y-auto">
+                    {demoRoles.map((role) => {
+                      const isThisLoading = activeRole === role.name;
+                      return (
+                        <button
+                          key={role.name}
+                          type="button"
+                          onClick={() => {
+                            setDemoDropdownOpen(false);
+                            handleRoleSelect(role);
+                          }}
+                          disabled={anyLoading}
+                          className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-navy/5 transition-all text-left group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${role.color} flex items-center justify-center text-white text-[10px] font-black shadow-sm shrink-0`}>
+                              {role.badge}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-slate-900 leading-tight">{role.name}</p>
+                              <p className="text-[10px] text-slate-700 leading-tight">{role.desc}</p>
+                            </div>
+                          </div>
+                          <span className="text-[9px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md group-hover:bg-white transition-colors">
+                            {role.email.split('@')[0]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              <p className="text-[9px] text-slate/40 text-center mt-3">
-                Click any role card to instantly log in · All passwords: <span className="font-mono">password123</span>
+              <p className="text-[9px] text-slate-800 font-bold text-center mt-3">
+                Select a role to instantly log in · All passwords: <span className="font-mono font-extrabold text-navy">password123</span>
               </p>
             </>
           )}
