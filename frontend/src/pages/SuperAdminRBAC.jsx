@@ -394,7 +394,7 @@ function SuperAdminRBAC() {
   }
 
   return (
-    <div className="space-y-8 animate-fadeIn relative pb-12">
+    <div className="space-y-6 relative pb-12">
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-50 bg-navy border border-gold text-white px-5 py-3 rounded-2xl flex items-center gap-3 shadow-xl shadow-stone-900/10 animate-slideIn">
@@ -406,7 +406,7 @@ function SuperAdminRBAC() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border-cream/60 pb-5">
         <div>
           <h1 className="font-display font-bold text-3xl text-navy">Global RBAC & Access Control</h1>
           <p className="text-slate text-sm font-medium mt-1">Configure systemic employee roles and map module permission parameters across all cluster tenants</p>
@@ -419,291 +419,292 @@ function SuperAdminRBAC() {
         </button>
       </div>
 
-      {/* Search & Tabs Filter Control Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white/40 border border-border-cream rounded-2xl backdrop-blur-md">
-        {/* Search */}
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate" />
-          <input
-            type="text"
-            placeholder="Search global blueprints..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold text-charcoal placeholder-slate"
-          />
-        </div>
-
-        {/* Tab Filters */}
-        <div className="flex items-center gap-1 bg-cream/20 p-1.5 border border-border-cream/60 rounded-xl overflow-x-auto">
-          {[
-            { id: 'all', label: 'All Blueprints' },
-            { id: 'system', label: 'System Predefined' },
-            { id: 'custom', label: 'Custom Templates' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setRoleFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
-                roleFilter === tab.id
-                  ? 'bg-navy text-white shadow'
-                  : 'text-charcoal hover:bg-cream/40'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Grid of Role Cards */}
-      {filteredRoles.length === 0 ? (
-        <div className="p-12 text-center bg-white/30 border border-dashed border-border-cream rounded-[2rem] flex flex-col items-center justify-center space-y-3">
-          <Shield className="w-8 h-8 text-slate animate-pulse" />
-          <p className="text-xs font-bold text-navy uppercase tracking-wider">No matching roles found</p>
-          <p className="text-slate text-xs max-w-sm">Try modifying your search queries or selecting another filter tab.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredRoles.map(r => {
-            const IconComponent = getRoleIcon(r.name);
-            const totalPerms = modules.length * actions.length; // 40
-            const activeCount = r.permissions.length;
-            const percentActive = Math.round((activeCount / totalPerms) * 100);
-            const isSelected = selectedRoleId === r.id;
-
-            return (
-              <div 
-                key={r.id}
-                onClick={() => setSelectedRoleId(r.id)}
-                className={`p-6 rounded-[2rem] border bg-white soft-card cursor-pointer transition-all duration-300 relative flex flex-col justify-between ${
-                  isSelected 
-                    ? 'border-navy shadow-lg ring-1 ring-navy bg-gradient-to-br from-white to-cream/10' 
-                    : 'border-border-cream hover:border-gold hover:shadow-md hover:-translate-y-0.5'
-                }`}
-              >
-                {/* Card Header */}
-                <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className={`p-3 rounded-xl transition-colors ${isSelected ? 'bg-navy text-gold' : 'bg-cream/40 text-navy'}`}>
-                      <IconComponent className="w-5 h-5" />
-                    </div>
-                    <span className={`text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-full font-bold leading-none ${
-                      r.isSystem 
-                        ? 'bg-navy text-gold-light border border-gold/10' 
-                        : 'bg-gold-pale text-navy border border-gold/30'
-                    }`}>
-                      {r.isSystem ? 'System Blueprint' : 'Custom Template'}
-                    </span>
-                  </div>
-                  
-                  <h3 className="font-display font-bold text-base text-navy mb-1.5">{r.name}</h3>
-                  <p className="text-slate text-xs font-medium line-clamp-3 leading-relaxed mb-4">
-                    {r.description || 'No description provided.'}
-                  </p>
-                </div>
-
-                {/* Card Footer Statistics & Actions */}
-                <div className="mt-auto space-y-4">
-                  {/* Active Permissions Progress */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center text-[10px] font-bold text-navy uppercase tracking-wider">
-                      <span>Active Privileges</span>
-                      <span className="font-mono text-xs">{activeCount} / {totalPerms} ({percentActive}%)</span>
-                    </div>
-                    <div className="w-full h-2 bg-cream/40 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gold rounded-full transition-all duration-500" 
-                        style={{ width: `${percentActive}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-dashed border-border-cream/80">
-                    <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-gold' : 'text-slate'}`}>
-                      {isSelected ? 'Currently Selected' : 'Click to Configure'}
-                    </span>
-
-                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                      {/* Clone button */}
-                      <button
-                        type="button"
-                        title="Clone role blueprint"
-                        onClick={() => {
-                          setCloningRoleId(r.id);
-                          setCloneRoleName(`Copy of ${r.name}`);
-                          setCloneRoleDesc(r.description || '');
-                          setShowCloneModal(true);
-                        }}
-                        className="p-2 rounded-lg border border-border-cream hover:border-gold hover:bg-gold-pale text-slate hover:text-navy transition-all"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
-
-                      {/* Delete button (if not system) */}
-                      {!r.isSystem && (
-                        <button
-                          type="button"
-                          title="Delete custom role blueprint"
-                          onClick={() => handleDeleteRole(r.id, r.name, r.isSystem)}
-                          className="p-2 rounded-lg border border-border-cream hover:border-red-400 hover:bg-red-50 text-danger transition-all"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Permissions Matrix section */}
-      {activeRole && (
-        <div className="space-y-6">
-          <div className="soft-card bg-white p-6 space-y-6">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-border-cream pb-4">
-              <div>
-                <div className="flex items-center gap-3">
-                  <h3 className="font-display font-semibold text-lg text-navy">
-                    Permission Blueprint Matrix: <span className="text-gold font-bold">{activeRole.name}</span>
-                  </h3>
-                  <span className={`text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-full font-bold leading-none ${
-                    activeRole.isSystem 
-                      ? 'bg-navy text-gold-light border border-gold/10' 
-                      : 'bg-gold-pale text-navy border border-gold/30'
-                  }`}>
-                    {activeRole.isSystem ? 'ReadOnly Defaults' : 'Writable Blueprint'}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate mt-1">Configure systemic modules and read/write permission flags. Global settings apply templates to new properties.</p>
-              </div>
-
-              {/* Bulk Controls & Matrix Search */}
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Search Modules */}
-                <div className="relative w-full sm:w-auto">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate" />
-                  <input
-                    type="text"
-                    placeholder="Search modules..."
-                    value={matrixSearchQuery}
-                    onChange={(e) => setMatrixSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 bg-cream/10 border border-border-cream rounded-lg focus:outline-none focus:border-gold text-[10px] font-semibold text-charcoal placeholder-slate"
-                  />
-                </div>
-
-                {activeRole.name !== 'Tenant Admin' && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleGrantAllPermissions}
-                      className="px-3 py-1.5 bg-navy text-white text-[10px] font-bold uppercase tracking-wider rounded-lg border border-navy hover:bg-navy/90 transition-all flex items-center gap-1.5"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-gold" /> Grant All
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRevokeAllPermissions}
-                      className="px-3 py-1.5 bg-white border border-border-cream text-charcoal text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-cream/20 transition-all"
-                    >
-                      Revoke All
-                    </button>
-                  </div>
-                )}
-              </div>
+      {/* Main Workspace Layout: 2 Columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* Left Column: Roles Explorer (w-1/3 equivalent) */}
+        <div className="lg:col-span-4 space-y-4">
+          <div className="bg-white/40 border border-border-cream rounded-2xl p-4 backdrop-blur-md space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display font-bold text-xs text-navy uppercase tracking-wider">Role Blueprints</h3>
+              <span className="text-[10px] bg-navy/5 text-navy font-bold px-2 py-0.5 rounded-full">
+                {filteredRoles.length}
+              </span>
+            </div>
+            
+            {/* Search Roles */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate" />
+              <input
+                type="text"
+                placeholder="Search global blueprints..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-3 py-2 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold text-charcoal placeholder-slate"
+              />
             </div>
 
-            {/* Matrix Table */}
-            <div className="overflow-x-auto border border-border-cream/40 rounded-2xl">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-border-cream text-[10px] font-bold text-navy uppercase tracking-wider bg-cream/20">
-                    <th className="py-3 px-5 w-1/3">Module / Entity Path</th>
-                    {actions.map(act => (
-                      <th key={act} className="py-3 px-4 text-center capitalize">{act}</th>
-                    ))}
-                    <th className="py-3 px-5 text-right">Quick Control</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-cream/40 text-xs font-semibold">
-                  {filteredModules.length === 0 ? (
-                    <tr>
-                      <td colSpan={actions.length + 2} className="py-8 text-center text-slate text-xs font-semibold">
-                        No modules match your query.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredModules.map((mod) => {
-                      const modulePerms = actions.map(act => `${mod.key}.${act}`);
-                      const activeCount = modulePerms.filter(pk => activeRole.permissions.includes(pk)).length;
-                      const allChecked = activeCount === actions.length;
-
-                      return (
-                        <tr key={mod.key} className="hover:bg-cream/5 transition-colors">
-                          <td className="py-3.5 px-5 font-bold text-charcoal flex items-center gap-2.5">
-                            <Lock className="w-3.5 h-3.5 text-slate/60" />
-                            <div>
-                              <span className="text-navy">{mod.name}</span>
-                              <span className="block text-[9px] text-slate font-mono uppercase mt-0.5">{mod.key}.*</span>
-                            </div>
-                          </td>
-                          
-                          {/* Checkboxes for Actions */}
-                          {actions.map(act => {
-                            const permKey = `${mod.key}.${act}`;
-                            const isChecked = activeRole.permissions.includes(permKey);
-                            return (
-                              <td key={act} className="py-3.5 px-4 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleTogglePermission(permKey)}
-                                  disabled={activeRole.name === 'Tenant Admin'}
-                                  className={`w-5 h-5 rounded-md border flex items-center justify-center mx-auto transition-all ${
-                                    isChecked 
-                                      ? 'bg-navy border-navy text-gold font-bold' 
-                                      : 'border-border-cream hover:border-gold bg-white text-transparent'
-                                  } ${activeRole.name === 'Tenant Admin' ? 'cursor-not-allowed opacity-80' : ''}`}
-                                >
-                                  {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                                </button>
-                              </td>
-                            );
-                          })}
-
-                          {/* Quick Control toggle entire module */}
-                          <td className="py-3.5 px-5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleAllModulePermissions(mod.key, !allChecked)}
-                              disabled={activeRole.name === 'Tenant Admin'}
-                              className={`text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded transition-colors ${
-                                allChecked 
-                                  ? 'bg-red-50 text-danger border border-red-100 hover:bg-red-100'
-                                  : 'bg-gold-pale text-navy border border-gold/30 hover:bg-gold/10'
-                              } ${activeRole.name === 'Tenant Admin' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                              {allChecked ? 'Revoke All' : 'Grant All'}
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="p-4 bg-cream/35 border border-border-cream/60 rounded-2xl flex items-center gap-3">
-              <FileLock2 className="w-5 h-5 text-gold shrink-0" />
-              <p className="text-[10px] text-slate leading-relaxed">
-                <span className="font-bold text-navy">Security Policy Override:</span> Pre-loaded global roles serve as the blueprint defaults for new tenants. Individual Tenant Admins can override permissions for custom local roles inside their property, but cannot access unauthorized modules flag-restricted by their billing plan.
-              </p>
+            {/* Tab Filters */}
+            <div className="flex gap-1 p-1 bg-cream/20 border border-border-cream/60 rounded-xl overflow-x-auto">
+              {[
+                { id: 'all', label: 'All' },
+                { id: 'system', label: 'System' },
+                { id: 'custom', label: 'Custom' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setRoleFilter(tab.id)}
+                  className={`flex-1 px-2.5 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                    roleFilter === tab.id
+                      ? 'bg-navy text-white shadow-sm'
+                      : 'text-charcoal hover:bg-cream/40'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </div>
+
+          {/* Roles List */}
+          <div className="space-y-3 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
+            {filteredRoles.length === 0 ? (
+              <div className="p-8 text-center bg-white/30 border border-dashed border-border-cream rounded-2xl flex flex-col items-center justify-center space-y-2">
+                <Shield className="w-6 h-6 text-slate/60 animate-pulse" />
+                <p className="text-[10px] font-bold text-navy uppercase tracking-wider">No blueprints found</p>
+              </div>
+            ) : (
+              filteredRoles.map(r => {
+                const IconComponent = getRoleIcon(r.name);
+                const totalPerms = modules.length * actions.length;
+                const activeCount = r.permissions.length;
+                const percentActive = Math.round((activeCount / totalPerms) * 100);
+                const isSelected = selectedRoleId === r.id;
+
+                return (
+                  <div
+                    key={r.id}
+                    onClick={() => setSelectedRoleId(r.id)}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all duration-200 flex flex-col justify-between space-y-3 relative ${
+                      isSelected
+                        ? 'border-navy bg-white shadow-md ring-1 ring-navy/5'
+                        : 'border-border-cream bg-white/60 hover:bg-white hover:border-gold/50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-xl shrink-0 ${isSelected ? 'bg-navy text-gold' : 'bg-cream/40 text-navy'}`}>
+                          <IconComponent className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="font-display font-bold text-xs text-navy">{r.name}</h4>
+                          <span className={`text-[8px] font-bold uppercase tracking-wider ${r.isSystem ? 'text-navy' : 'text-gold'}`}>
+                            {r.isSystem ? 'System Blueprint' : 'Custom Template'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          title="Clone blueprint"
+                          onClick={() => {
+                            setCloningRoleId(r.id);
+                            setCloneRoleName(`Copy of ${r.name}`);
+                            setCloneRoleDesc(r.description || '');
+                            setShowCloneModal(true);
+                          }}
+                          className="p-1.5 rounded-lg border border-border-cream hover:border-gold hover:bg-gold-pale text-slate hover:text-navy transition-all"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                        {!r.isSystem && (
+                          <button
+                            type="button"
+                            title="Delete blueprint"
+                            onClick={() => handleDeleteRole(r.id, r.name, r.isSystem)}
+                            className="p-1.5 rounded-lg border border-border-cream hover:border-red-400 hover:bg-red-50 text-danger transition-all"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="text-[10px] text-slate-700 font-medium leading-relaxed line-clamp-2">
+                      {r.description || 'No description provided.'}
+                    </p>
+
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-[9px] font-bold text-navy uppercase tracking-wider">
+                        <span>Privileges</span>
+                        <span className="font-mono text-xs">{activeCount}/{totalPerms} ({percentActive}%)</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-cream/40 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gold rounded-full transition-all duration-300" 
+                          style={{ width: `${percentActive}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
-      )}
+
+        {/* Right Column: Permission Matrix Details (w-2/3 equivalent) */}
+        <div className="lg:col-span-8">
+          {activeRole ? (
+            <div className="bg-white border border-border-cream rounded-[2rem] p-6 space-y-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-cream/60 pb-4">
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="font-display font-semibold text-lg text-navy">
+                      Permission Blueprint Matrix: <span className="text-gold font-bold">{activeRole.name}</span>
+                    </h3>
+                    <span className={`text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-full font-bold leading-none ${
+                      activeRole.isSystem 
+                        ? 'bg-navy text-gold border border-gold/10' 
+                        : 'bg-gold-pale text-navy border border-gold/30'
+                    }`}>
+                      {activeRole.isSystem ? 'ReadOnly Defaults' : 'Writable Blueprint'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-700 font-medium mt-1">Configure systemic modules and read/write permission flags. Global settings apply templates to new properties.</p>
+                </div>
+
+                {/* Bulk Controls & Matrix Search */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="relative w-full sm:w-auto">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate" />
+                    <input
+                      type="text"
+                      placeholder="Search modules..."
+                      value={matrixSearchQuery}
+                      onChange={(e) => setMatrixSearchQuery(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 bg-cream/10 border border-border-cream rounded-lg focus:outline-none focus:border-gold text-[10px] font-semibold text-charcoal placeholder-slate"
+                    />
+                  </div>
+
+                  {activeRole.name !== 'Tenant Admin' && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleGrantAllPermissions}
+                        className="px-3 py-1.5 bg-navy text-white text-[10px] font-bold uppercase tracking-wider rounded-lg border border-navy hover:bg-navy/90 transition-all flex items-center gap-1.5"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-gold" /> Grant All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleRevokeAllPermissions}
+                        className="px-3 py-1.5 bg-white border border-border-cream text-charcoal text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-cream/20 transition-all"
+                      >
+                        Revoke All
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Matrix Table */}
+              <div className="overflow-x-auto border border-border-cream/40 rounded-2xl">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-border-cream text-[10px] font-bold text-navy uppercase tracking-wider bg-cream/20">
+                      <th className="py-3 px-5 w-1/3">Module / Entity Path</th>
+                      {actions.map(act => (
+                        <th key={act} className="py-3 px-4 text-center capitalize">{act}</th>
+                      ))}
+                      <th className="py-3 px-5 text-right">Quick Control</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-cream/40 text-xs font-semibold">
+                    {filteredModules.length === 0 ? (
+                      <tr>
+                        <td colSpan={actions.length + 2} className="py-8 text-center text-slate text-xs font-semibold">
+                          No modules match your query.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredModules.map((mod) => {
+                        const modulePerms = actions.map(act => `${mod.key}.${act}`);
+                        const activeCount = modulePerms.filter(pk => activeRole.permissions.includes(pk)).length;
+                        const allChecked = activeCount === actions.length;
+
+                        return (
+                          <tr key={mod.key} className="hover:bg-cream/5 transition-colors">
+                            <td className="py-3.5 px-5 font-bold text-charcoal flex items-center gap-2.5">
+                              <Lock className="w-3.5 h-3.5 text-slate/60" />
+                              <div>
+                                <span className="text-navy">{mod.name}</span>
+                                <span className="block text-[9px] text-slate font-mono uppercase mt-0.5">{mod.key}.*</span>
+                              </div>
+                            </td>
+                            
+                            {/* Checkboxes for Actions */}
+                            {actions.map(act => {
+                              const permKey = `${mod.key}.${act}`;
+                              const isChecked = activeRole.permissions.includes(permKey);
+                              return (
+                                <td key={act} className="py-3.5 px-4 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleTogglePermission(permKey)}
+                                    disabled={activeRole.name === 'Tenant Admin'}
+                                    className={`w-5 h-5 rounded-md border flex items-center justify-center mx-auto transition-all ${
+                                      isChecked 
+                                        ? 'bg-navy border-navy text-gold font-bold' 
+                                        : 'border-border-cream hover:border-gold bg-white text-transparent'
+                                    } ${activeRole.name === 'Tenant Admin' ? 'cursor-not-allowed opacity-80' : ''}`}
+                                  >
+                                    {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                                  </button>
+                                </td>
+                              );
+                            })}
+
+                            {/* Quick Control toggle entire module */}
+                            <td className="py-3.5 px-5 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleAllModulePermissions(mod.key, !allChecked)}
+                                disabled={activeRole.name === 'Tenant Admin'}
+                                className={`text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded transition-colors ${
+                                  allChecked 
+                                    ? 'bg-red-50 text-danger border border-red-100 hover:bg-red-100'
+                                    : 'bg-gold-pale text-navy border border-gold/30 hover:bg-gold/10'
+                                } ${activeRole.name === 'Tenant Admin' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                {allChecked ? 'Revoke All' : 'Grant All'}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="p-4 bg-cream/35 border border-border-cream/60 rounded-2xl flex items-center gap-3">
+                <FileLock2 className="w-5 h-5 text-gold shrink-0" />
+                <p className="text-[10px] text-slate-800 leading-relaxed font-semibold">
+                  <span className="font-bold text-navy">Security Policy Override:</span> Pre-loaded global roles serve as the blueprint defaults for new tenants. Individual Tenant Admins can override permissions for custom local roles inside their property, but cannot access unauthorized modules flag-restricted by their billing plan.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center p-12 bg-white/40 border border-border-cream rounded-[2rem] text-center space-y-3">
+              <Shield className="w-8 h-8 text-slate animate-pulse" />
+              <p className="text-sm font-bold text-navy uppercase tracking-wider">Select a role blueprint</p>
+              <p className="text-xs text-slate-700 font-medium">Select a role on the left panel to configure its permissions.</p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* ─── MODAL: CREATE GLOBAL ROLE ───────────────────────────────── */}
       {showAddRoleModal && (

@@ -15,23 +15,28 @@
     width: 6px;
     height: 6px;
   }
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
+
   ::-webkit-scrollbar-thumb {
     background: #EBE5DA;
     border-radius: 999px;
   }
+
   ::-webkit-scrollbar-thumb:hover {
     background: #D4AF37;
   }
 }
 
 @layer components {
+
   /* Premium luxury card style */
   .soft-card {
     @apply bg-white/40 backdrop-blur-md border border-border-cream rounded-2xl transition-all duration-300;
   }
+
   .soft-card:hover {
     @apply border-gold shadow-lg shadow-navy/5;
   }
@@ -48,22 +53,102 @@
   .btn-secondary {
     @apply bg-white border border-border-cream text-charcoal hover:bg-surface-linen/50 active:scale-95 transition-all px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2;
   }
+
+  /* Liquid glassmorphism card style */
+  .liquid-glass {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.15) 100%);
+    backdrop-filter: blur(25px) saturate(140%) contrast(105%);
+    -webkit-backdrop-filter: blur(25px) saturate(140%) contrast(105%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 
+      0 24px 50px -12px rgba(11, 31, 58, 0.15),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.6),
+      inset 0 -1px 0 0 rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .liquid-glass::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0) 40%,
+      rgba(255, 255, 255, 0.15) 45%,
+      rgba(255, 255, 255, 0.25) 50%,
+      rgba(255, 255, 255, 0.15) 55%,
+      rgba(255, 255, 255, 0) 60%,
+      transparent 100%
+    );
+    transform: rotate(-25deg);
+    pointer-events: none;
+  }
+
+  @keyframes liquid-glass-shine {
+    0% {
+      transform: translate(-30%, -30%) rotate(-25deg);
+    }
+    100% {
+      transform: translate(30%, 30%) rotate(-25deg);
+    }
+  }
+
+  /* Glass inputs */
+  .glass-input {
+    background: rgba(255, 255, 255, 0.45) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    color: #1F2933 !important;
+    transition: all 0.3s ease !important;
+  }
+  
+  .glass-input::placeholder {
+    color: rgba(31, 41, 51, 0.5) !important;
+  }
+
+  .glass-input:focus {
+    background: rgba(255, 255, 255, 0.75) !important;
+    border-color: #D4AF37 !important;
+    box-shadow: 0 0 0 3px rgba(212, 175, 87, 0.15) !important;
+    outline: none !important;
+  }
+
+  /* Glass demo role buttons */
+  .glass-role-btn {
+    background: rgba(255, 255, 255, 0.35) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    transition: all 0.2s ease-in-out !important;
+  }
+
+  .glass-role-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.75) !important;
+    border-color: rgba(212, 175, 87, 0.4) !important;
+    box-shadow: 0 10px 20px -5px rgba(11, 31, 58, 0.08) !important;
+  }
 }
 
 /* Explicit backdrop blur overrides to fix modal backdrop-filter in all browsers */
-.backdrop-blur-sm {
+.backdrop-blur-sm,
+.backdrop-blur-lg {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
 
 /* Make all modal backdrop overlays completely transparent and remove dark background overlays */
-.fixed.inset-0.backdrop-blur-sm {
+.fixed.inset-0.backdrop-blur-sm,
+.fixed.inset-0.backdrop-blur-md,
+.fixed.inset-0.backdrop-blur,
+.fixed.inset-0[class*="backdrop-blur"] {
   background-color: transparent !important;
   background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
-
-.backdrop-blur-md {
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
-}
-

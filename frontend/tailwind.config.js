@@ -37,8 +37,8 @@ module.exports = {
         }
       },
       fontFamily: {
-        display: ['Lora', 'serif'],
-        sans: ['Inter', 'sans-serif'],
+        display: ['Cormorant Garamond', 'Lora', 'serif'],
+        sans: ['Outfit', 'Inter', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       keyframes: {

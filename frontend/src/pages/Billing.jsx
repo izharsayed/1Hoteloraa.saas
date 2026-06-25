@@ -1064,18 +1064,29 @@ function Billing() {
             {/* Dynamic Print CSS */}
             <style dangerouslySetInnerHTML={{__html: `
               @media print {
-                body {
-                  background: white !important;
-                  background-image: none !important;
+                /* Hide everything in the body by default */
+                body * {
+                  visibility: hidden !important;
                 }
-                .print\\:hidden {
-                  display: none !important;
+                /* Show ONLY the printable invoice area and its children */
+                #printable-area, #printable-area * {
+                  visibility: visible !important;
                 }
+                /* Absolute position to print start */
                 #printable-area {
+                  position: absolute !important;
+                  left: 0 !important;
+                  top: 0 !important;
                   width: ${printFormat === 'pos' ? '80mm' : '100%'} !important;
                   margin: 0 auto !important;
                   padding: 10px !important;
                   font-family: ${printFormat === 'pos' ? 'monospace' : 'sans-serif'} !important;
+                }
+                /* Allow page breaks and remove scrolling containers limitations during print */
+                html, body, #root, #root *, .fixed, .relative, .overflow-y-auto {
+                  height: auto !important;
+                  max-height: none !important;
+                  overflow: visible !important;
                 }
               }
             `}} />
