@@ -85,17 +85,12 @@ function Reservations() {
     }
   }, [checkInDate, checkOutDate]);
 
-  // Set default rate when a room is selected
+  // Clear default rate when room selection is cleared
   useEffect(() => {
-    if (selectedRoomId) {
-      const room = availableRooms.find(r => r.id === selectedRoomId);
-      if (room && room.roomType) {
-        setRatePerNight(room.roomType.basePrice);
-      }
-    } else {
+    if (!selectedRoomId) {
       setRatePerNight('');
     }
-  }, [selectedRoomId, availableRooms]);
+  }, [selectedRoomId]);
 
   const showToast = (message, isSuccess = true) => {
     if (isSuccess) {
@@ -591,7 +586,20 @@ function Reservations() {
                             id="selectedRoomSelect"
                             name="roomId"
                             value={selectedRoomId}
-                            onChange={(e) => setSelectedRoomId(e.target.value)}
+                            onChange={(e) => {
+                              const roomId = e.target.value;
+                              setSelectedRoomId(roomId);
+                              if (roomId) {
+                                const room = availableRooms.find(r => r.id === roomId);
+                                if (room && room.roomType) {
+                                  setRatePerNight(String(room.roomType.basePrice));
+                                } else {
+                                  setRatePerNight('');
+                                }
+                              } else {
+                                setRatePerNight('');
+                              }
+                            }}
                             required
                             className="w-full px-3 py-2 border border-border-cream/80 rounded-xl focus:outline-none focus:border-gold focus:bg-white text-xs font-semibold bg-cream/20 transition-all duration-200"
                           >

@@ -1,27 +1,81 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bed, CheckCircle2, AlertCircle, Wrench, Ban, RefreshCw, Filter, SlidersHorizontal, X } from 'lucide-react';
+import api from '../utils/api';
 
 function Rooms() {
   const [selectedType, setSelectedType] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [editingRoom, setEditingRoom] = useState(null);
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [rooms, setRooms] = useState([
-    { number: '101', type: 'Standard', status: 'Available', floor: '1st Floor', rate: '₹2,500' },
-    { number: '102', type: 'Standard', status: 'Occupied', floor: '1st Floor', rate: '₹2,500' },
-    { number: '103', type: 'Deluxe', status: 'Available', floor: '1st Floor', rate: '₹4,000' },
-    { number: '104', type: 'Deluxe', status: 'Dirty', floor: '1st Floor', rate: '₹4,000' },
-    { number: '201', type: 'Deluxe', status: 'Cleaning', floor: '2nd Floor', rate: '₹4,000' },
-    { number: '202', type: 'Suite', status: 'Occupied', floor: '2nd Floor', rate: '₹7,500' },
-    { number: '203', type: 'Suite', status: 'Available', floor: '2nd Floor', rate: '₹7,500' },
-    { number: '204', type: 'Suite', status: 'Maintenance', floor: '2nd Floor', rate: '₹7,500' },
-    { number: '301', type: 'Presidential Suite', status: 'Occupied', floor: '3rd Floor', rate: '₹15,000' },
-    { number: '302', type: 'Suite', status: 'Out Of Service', floor: '3rd Floor', rate: '₹7,500' }
-  ]);
+  const mapDbStatusToUi = (dbStatus) => {
+    switch (dbStatus) {
+      case 'AVAILABLE': return 'Available';
+      case 'OCCUPIED': return 'Occupied';
+      case 'CHECKOUT_PENDING': return 'Dirty';
+      case 'CLEANING': return 'Cleaning';
+      case 'MAINTENANCE': return 'Maintenance';
+      case 'RESERVED': return 'Reserved';
+      default: return 'Out Of Service';
+    }
+  };
 
-  const handleStatusChange = (number, newStatus) => {
-    setRooms(rooms.map(r => r.number === number ? { ...r, status: newStatus } : r));
-    setEditingRoom(null);
+  const mapUiStatusToDb = (uiStatus) => {
+    switch (uiStatus) {
+      case 'Available': return 'AVAILABLE';
+      case 'Occupied': return 'OCCUPIED';
+      case 'Dirty': return 'CHECKOUT_PENDING';
+      case 'Cleaning': return 'CLEANING';
+      case 'Maintenance': return 'MAINTENANCE';
+      case 'Reserved': return 'RESERVED';
+      default: return 'MAINTENANCE';
+    }
+  };
+
+  const fetchRooms = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await api.get('/rooms');
+      const mapped = (data || []).map(r => ({
+        id: r.id,
+        number: r.number,
+        type: r.roomType?.name || 'Standard',
+        status: mapDbStatusToUi(r.status),
+        floor: r.floor ? (r.floor.includes('Floor') ? r.floor : `${r.floor} Floor`) : '1st Floor',
+        rate: `₹${(r.roomType?.basePrice || 2500).toLocaleString()}`
+      }));
+      setRooms(mapped);
+    } catch (e) {
+      console.error(e);
+      setError(e.message || 'Failed to fetch rooms');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRooms();
+  }, []);
+
+  const handleStatusChange = async (number, newStatus) => {
+    try {
+      const room = rooms.find(r => r.number === number);
+      if (!room) return;
+      
+      const dbStatus = mapUiStatusToDb(newStatus);
+      await api.patch(`/rooms/${room.id}/status`, {
+        status: dbStatus
+      });
+      
+      fetchRooms();
+      setEditingRoom(null);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Failed to update room status');
+    }
   };
 
   const filteredRooms = rooms.filter(room => {
@@ -42,6 +96,8 @@ function Rooms() {
         return 'bg-blue-50 text-blue-800 border-blue-300/40';
       case 'Maintenance':
         return 'bg-stone-100 text-stone-800 border-stone-300/40';
+      case 'Reserved':
+        return 'bg-purple-50 text-purple-800 border-purple-300/40';
       default:
         return 'bg-stone-200 text-stone-600 border-stone-400/40';
     }
@@ -66,6 +122,13 @@ function Rooms() {
           <h1 className="font-display font-bold text-3xl text-navy">Rooms Directory</h1>
           <p className="text-slate text-sm font-medium mt-1">Real-time room occupancy status, nightly rates, and maintenance scheduling</p>
         </div>
+        <button 
+          onClick={fetchRooms}
+          className="flex items-center gap-2 text-xs font-bold text-navy bg-white border border-border-cream px-4 py-2 rounded-xl hover:bg-cream/10 active:scale-95 transition-all shadow-sm self-start md:self-auto"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          Refresh Directory
+        </button>
       </div>
 
       {/* Filters bar */}
@@ -98,6 +161,7 @@ function Rooms() {
             <option value="Dirty">Dirty</option>
             <option value="Cleaning">Cleaning</option>
             <option value="Maintenance">Maintenance</option>
+            <option value="Reserved">Reserved</option>
             <option value="Out Of Service">Out Of Service</option>
           </select>
         </div>
@@ -111,38 +175,54 @@ function Rooms() {
       </div>
 
       {/* Grid of rooms */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6">
-        {filteredRooms.map((room) => {
-          const StatusIcon = getStatusIcon(room.status);
-          return (
-            <div 
-              key={room.number}
-              onClick={() => setEditingRoom(room)}
-              className="soft-card p-5 cursor-pointer relative group flex flex-col justify-between h-44 bg-white"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="font-mono text-xs text-slate font-bold">{room.floor}</span>
-                  <h3 className="font-display font-bold text-xl text-navy mt-1">Room {room.number}</h3>
+      {loading ? (
+        <div className="flex items-center justify-center py-24 gap-2 text-slate text-sm font-semibold">
+          <RefreshCw className="w-4 h-4 animate-spin text-gold" />
+          Loading rooms...
+        </div>
+      ) : error ? (
+        <div className="py-12 text-center text-rose-600 text-sm font-medium">
+          {error}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6">
+          {filteredRooms.map((room) => {
+            const StatusIcon = getStatusIcon(room.status);
+            return (
+              <div 
+                key={room.number}
+                onClick={() => setEditingRoom(room)}
+                className="soft-card p-5 cursor-pointer relative group flex flex-col justify-between h-44 bg-white"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="font-mono text-xs text-slate font-bold">{room.floor}</span>
+                    <h3 className="font-display font-bold text-xl text-navy mt-1">Room {room.number}</h3>
+                  </div>
+                  <div className={`p-2 rounded-xl border ${getStatusStyle(room.status)}`}>
+                    <StatusIcon className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className={`p-2 rounded-xl border ${getStatusStyle(room.status)}`}>
-                  <StatusIcon className="w-5 h-5" />
-                </div>
-              </div>
 
-              <div className="border-t border-border-cream/50 pt-3 mt-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] text-slate font-semibold uppercase tracking-wider">{room.type}</p>
-                  <p className="font-mono text-xs text-navy font-bold mt-0.5">{room.rate} <span className="text-[10px] text-slate font-normal">/ night</span></p>
+                <div className="border-t border-border-cream/50 pt-3 mt-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-slate font-semibold uppercase tracking-wider">{room.type}</p>
+                    <p className="font-mono text-xs text-navy font-bold mt-0.5">{room.rate} <span className="text-[10px] text-slate font-normal">/ night</span></p>
+                  </div>
+                  <span className="text-[10px] font-bold text-gold opacity-0 group-hover:opacity-100 transition-opacity">
+                    Manage &rarr;
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold text-gold opacity-0 group-hover:opacity-100 transition-opacity">
-                  Manage &rarr;
-                </span>
               </div>
+            );
+          })}
+          {filteredRooms.length === 0 && (
+            <div className="col-span-full py-16 text-center text-slate text-sm">
+              No rooms match the selected filters.
             </div>
-          );
-        })}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Room Status Editor Modal */}
       {editingRoom && (
@@ -164,7 +244,7 @@ function Rooms() {
             <div className="space-y-4">
               <span className="text-slate text-[10px] font-bold uppercase tracking-wider block">Update Status</span>
               <div className="grid grid-cols-2 gap-3">
-                {['Available', 'Occupied', 'Dirty', 'Cleaning', 'Maintenance', 'Out Of Service'].map((status) => (
+                {['Available', 'Occupied', 'Dirty', 'Cleaning', 'Maintenance', 'Reserved'].map((status) => (
                   <button
                     key={status}
                     onClick={() => handleStatusChange(editingRoom.number, status)}
