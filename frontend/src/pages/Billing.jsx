@@ -916,7 +916,11 @@ function Billing() {
                   background: white !important;
                   display: block !important;
                 }
+                /* Absolute position to print start */
                 #printable-area {
+                  position: absolute !important;
+                  left: 0 !important;
+                  top: 0 !important;
                   width: ${printFormat === 'pos' ? '80mm' : '100%'} !important;
                   margin: 0 auto !important;
                   padding: ${printFormat === 'pos' ? '0' : '20px'} !important;
@@ -925,6 +929,12 @@ function Billing() {
                 }
                 .print\\:hidden {
                   display: none !important;
+                }
+                /* Allow page breaks and remove scrolling containers limitations during print */
+                html, body, #root, #root *, .fixed, .relative, .overflow-y-auto {
+                  height: auto !important;
+                  max-height: none !important;
+                  overflow: visible !important;
                 }
               }
             `}} />
