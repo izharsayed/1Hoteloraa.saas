@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CreditCard, 
   IndianRupee, 
@@ -17,110 +17,22 @@ import {
   TrendingUp,
   Coins
 } from 'lucide-react';
+import api from '../utils/api.js';
 
 function Billing() {
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
-  
-  const [invoices, setInvoices] = useState([
-    { 
-      id: 'INV-2026-001', 
-      type: 'Room Folio', 
-      guest: 'Dr. Aditya Verma', 
-      amount: 14500, 
-      room: 'Suite 302', 
-      status: 'Unpaid', 
-      discount: 0,
-      paidAmount: 0,
-      gstRate: 18,
-      serviceChargeRate: 5,
-      items: [
-        { name: 'Room Stay (2 Nights)', price: 12000 },
-        { name: 'In-Room Dining', price: 1500 },
-        { name: 'Laundry Service', price: 1000 }
-      ],
-      payments: []
-    },
-    { 
-      id: 'INV-2026-002', 
-      type: 'POS Table', 
-      guest: 'Table 14 - Dine In', 
-      amount: 2250, 
-      room: 'Restaurant', 
-      status: 'Unpaid', 
-      discount: 0,
-      paidAmount: 0,
-      gstRate: 5,
-      serviceChargeRate: 0,
-      items: [
-        { name: '2x Butter Chicken', price: 1200 },
-        { name: '4x Butter Naan', price: 200 },
-        { name: '1x Dal Makhani', price: 350 },
-        { name: '1x Veg Biryani', price: 500 }
-      ],
-      payments: []
-    },
-    { 
-      id: 'INV-2026-003', 
-      type: 'Room Folio', 
-      guest: 'Meera Deshmukh', 
-      amount: 8200, 
-      room: 'Room 105', 
-      status: 'Paid', 
-      discount: 500,
-      paidAmount: 9086,
-      gstRate: 18,
-      serviceChargeRate: 0,
-      items: [
-        { name: 'Room Stay (1 Night)', price: 6000 },
-        { name: 'Spa Treatment', price: 2200 }
-      ],
-      payments: [{ method: 'Card/UPI', amount: 9086, reference: 'TXN-902348', date: '2026-06-23' }]
-    },
-    { 
-      id: 'INV-2026-004', 
-      type: 'POS Table', 
-      guest: 'Table 03 - Dine In', 
-      amount: 1240, 
-      room: 'Restaurant', 
-      status: 'Unpaid', 
-      discount: 0,
-      paidAmount: 0,
-      gstRate: 5,
-      serviceChargeRate: 5,
-      items: [
-        { name: '1x Chicken Burger', price: 350 },
-        { name: '1x Cheese Sandwich', price: 250 },
-        { name: '2x Cappuccino', price: 360 },
-        { name: '1x Chocolate Brownie', price: 280 }
-      ],
-      payments: []
-    },
-    { 
-      id: 'INV-2026-005', 
-      type: 'Room Service', 
-      guest: 'Rahul Khanna', 
-      amount: 650, 
-      room: 'Room 204', 
-      status: 'Paid', 
-      discount: 0,
-      paidAmount: 767,
-      gstRate: 18,
-      serviceChargeRate: 0,
-      items: [
-        { name: '1x Club Sandwich', price: 450 },
-        { name: '1x Fresh Lime Soda', price: 200 }
-      ],
-      payments: [{ method: 'Cash', amount: 767, reference: '', date: '2026-06-24' }]
+  const userJson = localStorage.getItem('user');
+  let userObj = { name: 'Staff', hotelName: 'Your Hotel Name' };
+  try {
+    if (userJson) {
+      const u = JSON.parse(userJson);
+      userObj = { ...userObj, ...u };
     }
-  ]);
+  } catch (e) {}
+  const hotelName = userObj.hotelName || userObj.businessName || 'Your Hotel Name';
 
-  // Quick Bill Form States
-  const [showAddBillModal, setShowAddBillModal] = useState(false);
-  const [newGuestName, setNewGuestName] = useState('');
-  const [newBillType, setNewBillType] = useState('POS Table');
-  const [newBillRoom, setNewBillRoom] = useState('Restaurant');
-  const [newBillAmount, setNewBillAmount] = useState('');
-  const [newBillItems, setNewBillItems] = useState('');
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // Discount / Split / Collection States
   const [customDiscount, setCustomDiscount] = useState('');
@@ -151,6 +63,62 @@ function Billing() {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
+  const loadOrders = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const data = await api.get('/orders');
+      
+      const mappedInvoices = data.map(order => ({
+        id: order.orderNumber || order.id.slice(0, 8).toUpperCase(),
+        orderId: order.id,
+        type: order.table ? 'POS Table' : 'Room Service',
+        guest: order.table ? `Table ${order.table.name}` : (order.user ? order.user.name : 'Walk-in'),
+        amount: order.subtotal || 0,
+        room: order.table?.floor || 'Restaurant',
+        status: order.status === 'COMPLETED' ? 'Paid' : 'Unpaid',
+        discount: order.discountAmount || 0,
+        paidAmount: order.totalAmount || 0,
+        gstRate: 5,
+        serviceChargeRate: 0,
+        items: order.items ? order.items.map(item => ({
+          name: item.menuItem?.name || 'Item',
+          price: item.totalPrice
+        })) : [],
+        payments: order.payment ? [{ 
+          method: order.payment.method, 
+          amount: order.payment.amount, 
+          date: order.payment.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0]
+        }] : []
+      }));
+
+      setInvoices(mappedInvoices);
+
+      // Optionally update selected invoice if it's currently open
+      if (selectedInvoice) {
+        const updatedSelected = mappedInvoices.find(inv => inv.orderId === selectedInvoice.orderId);
+        if (updatedSelected) {
+          // Keep local discount if user hasn't saved it yet
+          setSelectedInvoice({
+            ...updatedSelected,
+            discount: selectedInvoice.discount,
+            gstRate: selectedInvoice.gstRate,
+            serviceChargeRate: selectedInvoice.serviceChargeRate
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load orders', err);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadOrders();
+    const timer = setInterval(() => loadOrders(true), 10000);
+    return () => clearInterval(timer);
+  }, [selectedInvoice]);
+
   const handleSelectInvoice = (inv) => {
     setSelectedInvoice(inv);
     setCustomDiscount('');
@@ -162,7 +130,7 @@ function Billing() {
     setActiveActionTab('settle');
   };
 
-  const calculateTaxes = (amount, discount, gstRate = 18, serviceChargeRate = 0) => {
+  const calculateTaxes = (amount, discount, gstRate = 5, serviceChargeRate = 0) => {
     const taxable = Math.max(0, amount - discount);
     const serviceCharge = (taxable * serviceChargeRate) / 100;
     const baseWithService = taxable + serviceCharge;
@@ -183,50 +151,35 @@ function Billing() {
     setSelectedInvoice(updated.find(inv => inv.id === id));
   };
 
-  const handleRecordPayment = (e) => {
+  const handleRecordPayment = async (e) => {
     e.preventDefault();
     if (!selectedInvoice) return;
     
-    const taxes = calculateTaxes(
-      selectedInvoice.amount, 
-      selectedInvoice.discount, 
-      selectedInvoice.gstRate, 
-      selectedInvoice.serviceChargeRate
-    );
-    const grandTotal = Math.round(taxes.total);
-    const remaining = grandTotal - selectedInvoice.paidAmount;
-    
-    const collectVal = parseFloat(collectAmount) || remaining;
-    if (collectVal <= 0 || collectVal > remaining) {
-      showToast('Invalid collection amount');
-      return;
+    // Map frontend payment method to backend enum
+    let mappedMethod = 'CASH';
+    if (paymentMethod === 'Card/UPI') mappedMethod = 'CARD';
+    if (paymentMethod === 'Bank Transfer') mappedMethod = 'BANK_TRANSFER';
+    if (paymentMethod === 'Room Charge') mappedMethod = 'ROOM_CHARGE';
+
+    try {
+      const payload = {
+        orderId: selectedInvoice.orderId,
+        paymentMethod: mappedMethod,
+        discountAmount: selectedInvoice.discount || 0,
+        reference: ['Card/UPI', 'Bank Transfer'].includes(paymentMethod) ? paymentReference : undefined,
+        notes: `Collected via ${paymentMethod}`
+      };
+      
+      await api.post('/billing/generate', payload);
+      showToast(`Bill settled successfully via ${paymentMethod}`);
+      
+      await loadOrders(true);
+      setSelectedInvoice(null);
+      setCollectAmount('');
+      setPaymentReference('');
+    } catch (err) {
+      showToast(err.message || 'Failed to settle bill');
     }
-
-    const updated = invoices.map(inv => {
-      if (inv.id === selectedInvoice.id) {
-        const newPaid = inv.paidAmount + collectVal;
-        const newStatus = newPaid >= grandTotal ? 'Paid' : 'Partial';
-        const paymentRecord = {
-          method: paymentMethod,
-          amount: collectVal,
-          reference: ['Card/UPI', 'Bank Transfer'].includes(paymentMethod) ? paymentReference : '',
-          date: new Date().toISOString().split('T')[0]
-        };
-        showToast(`Collected ₹${collectVal.toLocaleString()} via ${paymentMethod}.`);
-        return { 
-          ...inv, 
-          paidAmount: newPaid, 
-          status: newStatus,
-          payments: [...inv.payments, paymentRecord]
-        };
-      }
-      return inv;
-    });
-
-    setInvoices(updated);
-    setSelectedInvoice(updated.find(inv => inv.id === selectedInvoice.id));
-    setCollectAmount('');
-    setPaymentReference('');
   };
 
   const handleApplyDiscount = () => {
@@ -313,41 +266,6 @@ function Billing() {
     showToast(`Removed "${itemToDelete.name}" from check.`);
   };
 
-  const handleAddBill = (e) => {
-    e.preventDefault();
-    if (!newGuestName || !newBillAmount) return;
-
-    const baseAmount = parseFloat(newBillAmount);
-    const parsedItems = newBillItems.trim()
-      ? newBillItems.split(',').map(itemStr => {
-          const clean = itemStr.trim();
-          return { name: clean, price: Math.round(baseAmount / newBillItems.split(',').length) };
-        })
-      : [{ name: newBillType + ' Service Charge', price: baseAmount }];
-
-    const newBill = {
-      id: `INV-2026-0${invoices.length + 1}`,
-      type: newBillType,
-      guest: newGuestName,
-      amount: baseAmount,
-      room: newBillRoom,
-      status: 'Unpaid',
-      discount: 0,
-      paidAmount: 0,
-      gstRate: newBillType === 'POS Table' ? 5 : 18,
-      serviceChargeRate: 0,
-      items: parsedItems,
-      payments: []
-    };
-
-    setInvoices([newBill, ...invoices]);
-    setNewGuestName('');
-    setNewBillAmount('');
-    setNewBillItems('');
-    setShowAddBillModal(false);
-    showToast(`Invoice ${newBill.id} generated.`);
-  };
-
   // Calculate KPI stats
   const outstandingDues = invoices.reduce((acc, inv) => {
     if (inv.status === 'Paid') return acc;
@@ -422,52 +340,46 @@ function Billing() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-display font-bold text-3xl text-navy">Cashier Billing & Folios Control</h1>
-            <p className="text-slate text-sm font-medium mt-1">Audit active guest ledger checks, apply discounts, process card/cash settlements, and print receipts</p>
+            <h1 className="font-display font-bold text-xl text-navy">Cashier Billing & Folios Control</h1>
+            <p className="text-slate text-[11px] font-medium mt-0.5">Audit active guest ledger checks, apply discounts, process card/cash settlements, and print receipts</p>
           </div>
-          <button 
-            onClick={() => setShowAddBillModal(true)}
-            className="btn-primary text-xs px-5 py-2.5 flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" /> Generate Quick Check
-          </button>
         </div>
 
         {/* KPI Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="soft-card p-5 flex items-center justify-between shadow-sm">
+          <div className="soft-card p-4 flex items-center justify-between shadow-sm">
             <div>
-              <span className="text-[10px] font-bold text-slate uppercase tracking-wider block">Outstanding Dues</span>
-              <span className="text-xl font-display font-bold text-navy mt-1 block">₹{outstandingDues.toLocaleString()}</span>
+              <span className="text-[9px] font-bold text-slate uppercase tracking-wider block">Outstanding Dues</span>
+              <span className="text-lg font-display font-bold text-navy mt-1 block">₹{outstandingDues.toLocaleString()}</span>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-danger-pale flex items-center justify-center">
-              <Coins className="w-5 h-5 text-danger" />
+            <div className="w-8 h-8 rounded-xl bg-danger-pale flex items-center justify-center">
+              <Coins className="w-4 h-4 text-danger" />
             </div>
           </div>
 
-          <div className="soft-card p-5 flex items-center justify-between shadow-sm">
+          <div className="soft-card p-4 flex items-center justify-between shadow-sm">
             <div>
-              <span className="text-[10px] font-bold text-slate uppercase tracking-wider block">Settled Today</span>
-              <span className="text-xl font-display font-bold text-success mt-1 block">₹{settlementsToday.toLocaleString()}</span>
+              <span className="text-[9px] font-bold text-slate uppercase tracking-wider block">Settled Today</span>
+              <span className="text-lg font-display font-bold text-success mt-1 block">₹{settlementsToday.toLocaleString()}</span>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-success-pale flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-success" />
+            <div className="w-8 h-8 rounded-xl bg-success-pale flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-success" />
             </div>
           </div>
 
-          <div className="soft-card p-5 flex items-center justify-between shadow-sm">
+          <div className="soft-card p-4 flex items-center justify-between shadow-sm">
             <div>
-              <span className="text-[10px] font-bold text-slate uppercase tracking-wider block">Active Checks</span>
-              <span className="text-xl font-display font-bold text-navy mt-1 block">{pendingChecksCount} pending</span>
+              <span className="text-[9px] font-bold text-slate uppercase tracking-wider block">Active Checks</span>
+              <span className="text-lg font-display font-bold text-navy mt-1 block">{pendingChecksCount} pending</span>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-gold-pale flex items-center justify-center">
-              <Receipt className="w-5 h-5 text-gold" />
+            <div className="w-8 h-8 rounded-xl bg-gold-pale flex items-center justify-center">
+              <Receipt className="w-4 h-4 text-gold" />
             </div>
           </div>
 
-          <div className="soft-card p-5 flex flex-col justify-between shadow-sm">
+          <div className="soft-card p-4 flex flex-col justify-between shadow-sm">
             <div>
-              <span className="text-[10px] font-bold text-slate uppercase tracking-wider block">Collection Share</span>
+              <span className="text-[9px] font-bold text-slate uppercase tracking-wider block">Collection Share</span>
               <div className="flex items-center gap-1.5 mt-2">
                 <div className="flex-1 h-2 rounded-full overflow-hidden flex bg-slate-100">
                   {paymentShare['Cash'] > 0 && <div className="h-full bg-gold" style={{ width: `${(paymentShare['Cash'] / totalShare) * 100}%` }} title={`Cash: ${cashPct}%`} />}
@@ -477,7 +389,7 @@ function Billing() {
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 mt-3 pt-2 border-t border-border-cream/40 text-[9px] font-semibold text-charcoal">
+            <div className="flex justify-between items-center mt-2 pt-1.5 border-t border-border-cream/40 text-[9px] font-semibold text-charcoal">
               <div className="flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-gold inline-block shrink-0" />
                 <span className="text-slate">Cash:</span>
@@ -493,9 +405,9 @@ function Billing() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
-        {/* Left List of invoices */}
-        <div className="lg:col-span-2 flex flex-col min-h-0 space-y-4">
+      <div className="flex-1 min-h-0 flex flex-col space-y-4 relative">
+        {/* Main List of invoices */}
+        <div className="flex flex-col min-h-0 flex-1 space-y-4">
           {/* Controls Bar */}
           <div className="soft-card p-4 flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
             <div className="relative w-full md:w-72">
@@ -617,26 +529,42 @@ function Billing() {
           </div>
         </div>
 
-        {/* Right Detail Pane */}
-        <div className="lg:col-span-1 flex flex-col min-h-0">
-          <div className="sticky top-6 soft-card p-4 border border-border-cream lg:max-h-full lg:overflow-y-auto max-h-none overflow-visible flex flex-col justify-between flex-1 min-h-0">
-            {selectedInvoice ? (
-            <div className="space-y-3.5 flex flex-col justify-between flex-1 min-h-0">
-              <div className="flex justify-between items-start border-b border-border-cream pb-4">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate">{selectedInvoice.type}</span>
-                  <h3 className="font-mono font-bold text-lg text-navy mt-1">{selectedInvoice.id}</h3>
-                </div>
-                <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider ${
-                  selectedInvoice.status === 'Paid' 
-                    ? 'bg-success/10 text-success border border-success/20' 
-                    : selectedInvoice.status === 'Partial'
-                    ? 'bg-blue-50 text-blue-800 border border-blue-300/40'
-                    : 'bg-warning-pale text-warning border border-warning/20'
-                }`}>
-                  {selectedInvoice.status}
-                </span>
+        </div>
+
+        {/* Right Detail Pane (Popup Modal) */}
+        {selectedInvoice && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 print:static print:block print:p-0">
+            <div 
+              className="absolute inset-0 bg-navy/60 backdrop-blur-sm transition-opacity print:hidden"
+              onClick={() => setSelectedInvoice(null)}
+            />
+            <div className="relative bg-white rounded-3xl w-full max-w-[500px] max-h-[90vh] shadow-2xl flex flex-col overflow-hidden animate-fadeIn print:w-full print:border-none print:shadow-none print:max-h-none print:rounded-none print:block">
+              <div className="flex justify-between items-center p-5 border-b border-border-cream bg-cream/20 shrink-0 print:hidden">
+                <h3 className="font-display font-bold text-navy text-lg">Invoice Details</h3>
+                <button 
+                  onClick={() => setSelectedInvoice(null)}
+                  className="p-1.5 text-slate hover:bg-white hover:text-navy rounded-xl transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
+              <div className="flex-1 overflow-y-auto p-5 flex flex-col relative bg-slate-50/30 print:p-0 print:bg-white">
+                <div id="printable-area" className="space-y-3.5 flex flex-col justify-between flex-1 bg-white p-5 rounded-2xl border border-border-cream shadow-sm print:border-none print:shadow-none print:p-0">
+                  <div className="flex justify-between items-start border-b border-border-cream pb-4">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate">{selectedInvoice.type}</span>
+                      <h3 className="font-mono font-bold text-lg text-navy mt-1">{selectedInvoice.id}</h3>
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                      selectedInvoice.status === 'Paid' 
+                        ? 'bg-success/10 text-success border border-success/20' 
+                        : selectedInvoice.status === 'Partial'
+                        ? 'bg-blue-50 text-blue-800 border border-blue-300/40'
+                        : 'bg-warning-pale text-warning border border-warning/20'
+                    }`}>
+                      {selectedInvoice.status}
+                    </span>
+                  </div>
 
               {/* Dynamic Tax Configuration Toggles */}
               {selectedInvoice.status !== 'Paid' && (
@@ -953,124 +881,40 @@ function Billing() {
                 </div>
               )}
 
-              {/* View/Print Receipt trigger (always show if any payments made) */}
-              {(selectedInvoice.paidAmount > 0 || selectedInvoice.status === 'Paid') && (
-                <button 
-                  onClick={() => setShowReceiptModal(true)}
-                  className="w-full btn-secondary flex items-center justify-center gap-2"
-                >
-                  <FileText className="w-4 h-4" /> View & Print Receipt
-                </button>
-              )}
+              {/* View/Print Receipt trigger (always show) */}
+              <button 
+                onClick={() => setShowReceiptModal(true)}
+                className="w-full btn-secondary flex items-center justify-center gap-2 mt-4"
+              >
+                <FileText className="w-4 h-4" /> View & Print Bill
+              </button>
             </div>
-          ) : (
-            <div className="text-center py-16 space-y-4">
-              <Receipt className="w-12 h-12 text-slate/50 mx-auto" />
-              <p className="text-xs font-semibold text-slate">Select a pending check on the left to review invoice details, apply discounts, or record payments</p>
+              </div>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
-
-      {showAddBillModal && (
-        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2rem] border border-border-cream p-8 w-full max-w-lg shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <h3 className="font-display font-semibold text-lg text-navy mb-4">Generate Quick Check</h3>
-            <form onSubmit={handleAddBill} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-navy uppercase tracking-wider block">Guest Name / Area Reference</label>
-                <input 
-                  type="text" 
-                  required
-                  placeholder="Karan Johar / Cafe Walk-in"
-                  value={newGuestName}
-                  onChange={(e) => setNewGuestName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-navy uppercase tracking-wider block">Check Type</label>
-                  <select
-                    value={newBillType}
-                    onChange={(e) => setNewBillType(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold"
-                  >
-                    <option value="POS Table">POS Table Check</option>
-                    <option value="Room Folio">Room Folio Check</option>
-                    <option value="Room Service">Room Service</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-navy uppercase tracking-wider block">Location / Table</label>
-                  <input 
-                    type="text" 
-                    placeholder="Table 18 or Room 304"
-                    value={newBillRoom}
-                    onChange={(e) => setNewBillRoom(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-navy uppercase tracking-wider block">Base Amount (₹)</label>
-                <input 
-                  type="number" 
-                  required
-                  placeholder="2450"
-                  value={newBillAmount}
-                  onChange={(e) => setNewBillAmount(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-mono font-bold"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-navy uppercase tracking-wider block">Bill Items (comma-separated, optional)</label>
-                <textarea 
-                  placeholder="e.g. 2x Butter Chicken, 1x Veg Biryani"
-                  value={newBillItems}
-                  onChange={(e) => setNewBillItems(e.target.value)}
-                  className="w-full px-4 py-2 bg-cream/10 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold h-16 resize-none"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-3">
-                <button 
-                  type="button" 
-                  onClick={() => setShowAddBillModal(false)}
-                  className="w-1/2 px-4 py-2.5 border border-border-cream text-charcoal hover:bg-stone-50 rounded-xl text-xs font-bold"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  className="w-1/2 px-4 py-2.5 bg-navy text-white hover:bg-navy/90 rounded-xl text-xs font-bold"
-                >
-                  Create Bill
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Receipt Preview Modal */}
       {showReceiptModal && selectedInvoice && (
-        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`bg-white rounded-[2rem] border border-border-cream p-8 w-full ${printFormat === 'pos' ? 'max-w-md' : 'max-w-2xl'} shadow-2xl relative max-h-[90vh] overflow-y-auto print:p-0 print:shadow-none print:border-none`}>
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 print-modal-overlay">
+          <div className={`bg-white rounded-[2rem] border border-border-cream p-8 w-full ${printFormat === 'pos' ? 'max-w-md' : 'max-w-2xl'} shadow-2xl relative max-h-[90vh] overflow-y-auto print:p-0 print:shadow-none print:border-none print:max-w-none print:max-h-none print:overflow-visible`}>
             {/* Dynamic Print CSS */}
             <style dangerouslySetInnerHTML={{__html: `
               @media print {
-                /* Hide everything in the body by default */
                 body * {
-                  visibility: hidden !important;
+                  visibility: hidden;
                 }
-                /* Show ONLY the printable invoice area and its children */
-                #printable-area, #printable-area * {
+                .print-modal-overlay, .print-modal-overlay * {
                   visibility: visible !important;
+                }
+                .print-modal-overlay {
+                  position: absolute;
+                  left: 0;
+                  top: 0;
+                  width: 100%;
+                  height: auto;
+                  background: white !important;
+                  display: block !important;
                 }
                 /* Absolute position to print start */
                 #printable-area {
@@ -1079,8 +923,12 @@ function Billing() {
                   top: 0 !important;
                   width: ${printFormat === 'pos' ? '80mm' : '100%'} !important;
                   margin: 0 auto !important;
-                  padding: 10px !important;
+                  padding: ${printFormat === 'pos' ? '0' : '20px'} !important;
                   font-family: ${printFormat === 'pos' ? 'monospace' : 'sans-serif'} !important;
+                  background: white !important;
+                }
+                .print\\:hidden {
+                  display: none !important;
                 }
                 /* Allow page breaks and remove scrolling containers limitations during print */
                 html, body, #root, #root *, .fixed, .relative, .overflow-y-auto {
@@ -1131,8 +979,8 @@ function Billing() {
                   {/* Receipt Header */}
                   <div className="flex justify-between items-start border-b border-border-cream pb-6">
                     <div>
-                      <h2 className="font-display font-bold text-2xl text-navy">HOTELORAA</h2>
-                      <p className="text-[10px] text-slate font-gold font-bold uppercase tracking-wider mt-1">Luxury PMS & POS Suite</p>
+                      <h2 className="font-display font-bold text-2xl text-navy uppercase tracking-wider">{hotelName}</h2>
+                      <p className="text-[10px] text-slate font-bold uppercase tracking-wider mt-1">Powered by Hoteloraa</p>
                     </div>
                     <div className="text-right text-xs">
                       <h3 className="font-bold text-navy text-sm uppercase">Guest Invoice</h3>
@@ -1150,7 +998,7 @@ function Billing() {
                     </div>
                     <div className="text-right">
                       <h4 className="font-bold text-navy uppercase tracking-wider mb-2">Property Address:</h4>
-                      <p className="font-bold text-charcoal">Royal Palace Hotel</p>
+                      <p className="font-bold text-charcoal">{hotelName}</p>
                       <p className="text-slate mt-0.5">VIP Road, New Delhi, India</p>
                     </div>
                   </div>
@@ -1256,16 +1104,21 @@ function Billing() {
                   </div>
 
                   {/* Watermark/Footer */}
-                  <div className="border-t border-border-cream pt-6 text-center text-[10px] text-slate font-semibold uppercase tracking-wider">
-                    Thank you for staying with us! • Powered by Hoteloraa SaaS
+                  <div className="border-t border-border-cream pt-6 mt-12 relative overflow-hidden flex flex-col items-center justify-center min-h-[100px]">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] blur-[2px] pointer-events-none select-none">
+                      <h2 className="font-display font-bold text-6xl text-navy tracking-widest uppercase">HOTELORAA</h2>
+                    </div>
+                    <div className="text-center text-[10px] text-slate font-semibold uppercase tracking-wider relative z-10 bg-white/50 px-4 py-1 rounded-full">
+                      Thank you for staying with us! • Powered by Hoteloraa SaaS
+                    </div>
                   </div>
                 </div>
               ) : (
                 /* ---------------- 3" POS THERMAL SLIP ---------------- */
                 <div className="font-mono text-xs text-charcoal space-y-4 max-w-[320px] mx-auto p-4 border border-dashed border-slate-300 rounded-xl bg-stone-50/50 print:bg-white print:border-0 print:p-0">
                   <div className="text-center space-y-1">
-                    <h3 className="font-bold text-lg text-navy tracking-wider">HOTELORAA</h3>
-                    <p className="text-[9px] uppercase text-slate font-bold">Royal Palace Hotel - F&B POS</p>
+                    <h3 className="font-bold text-lg text-navy tracking-wider uppercase">{hotelName}</h3>
+                    <p className="text-[9px] uppercase text-slate font-bold">F&B POS</p>
                     <p className="text-[9px] text-slate">VIP Road, New Delhi, India</p>
                     <p className="text-[10px] border-b border-dashed border-slate-300 py-1">--------------------------------</p>
                   </div>
@@ -1363,9 +1216,12 @@ function Billing() {
                     </div>
                   )}
 
-                  <div className="text-center text-[10px] space-y-1 pt-1">
-                    <p className="font-bold uppercase tracking-wider">Thank You!</p>
-                    <p className="text-[9px] text-slate">Please Visit Again</p>
+                  <div className="text-center text-[10px] space-y-2 pt-2 relative overflow-hidden min-h-[80px] flex flex-col justify-end pb-4">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] blur-[1px] pointer-events-none select-none">
+                      <h3 className="font-bold text-4xl text-navy tracking-widest uppercase">HOTELORAA</h3>
+                    </div>
+                    <p className="font-bold uppercase tracking-wider relative z-10 bg-white/50 mx-auto px-2 rounded">Thank You!</p>
+                    <p className="text-[9px] text-slate relative z-10 bg-white/50 mx-auto px-2 rounded">Please Visit Again</p>
                   </div>
                 </div>
               )}
