@@ -25,6 +25,11 @@ function Menu() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Add Category Modal states
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [creatingCategory, setCreatingCategory] = useState(false);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -141,6 +146,40 @@ function Menu() {
     }
   };
 
+  const handleCreateCategory = async (e) => {
+    e.preventDefault();
+    if (!newCategoryName.trim()) return;
+    try {
+      setCreatingCategory(true);
+      const newCat = await api.post('/menu/categories', { name: newCategoryName });
+      setCategories(prev => [...prev, newCat]);
+      setNewCategoryName('');
+      setSuccess('Category created successfully');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to create category');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setCreatingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this category? (It will fail if menu items are linked to it)')) return;
+    try {
+      await api.delete(`/menu/categories/${id}`);
+      setCategories(prev => prev.filter(c => c.id !== id));
+      if (selectedCategory === id) setSelectedCategory('All');
+      setSuccess('Category deleted successfully');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to delete category');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
   const resetForm = () => {
     setNewItemName('');
     setNewItemPrice('');
@@ -190,12 +229,20 @@ function Menu() {
           <h1 className="font-display font-bold text-3xl text-navy">POS Menu Catalog</h1>
           <p className="text-slate text-sm font-medium mt-1">Manage kitchen recipes, pricing structures, and active catalog dishes</p>
         </div>
-        <button 
-          onClick={() => { resetForm(); setShowAddModal(true); }}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4 text-gold" /> Add Menu Item
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setShowCategoryModal(true)}
+            className="px-4 py-2 bg-white border border-border-cream text-navy font-bold text-xs rounded-xl hover:border-gold hover:bg-gold-pale/10 transition-all flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> Manage Categories
+          </button>
+          <button 
+            onClick={() => { resetForm(); setShowAddModal(true); }}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4 text-gold" /> Add Menu Item
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -509,6 +556,62 @@ function Menu() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Categories Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-navy/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-border-cream flex justify-between items-center bg-cream/20">
+              <h3 className="font-display font-bold text-lg text-navy">Manage Categories</h3>
+              <button 
+                onClick={() => setShowCategoryModal(false)}
+                className="p-1 text-slate hover:text-navy hover:bg-cream/40 rounded-xl transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6 overflow-y-auto">
+              <form onSubmit={handleCreateCategory} className="flex gap-2">
+                <input 
+                  type="text" 
+                  required
+                  placeholder="New category name..."
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-border-cream rounded-xl focus:outline-none focus:border-gold text-xs font-semibold"
+                />
+                <button 
+                  type="submit"
+                  disabled={creatingCategory}
+                  className="bg-navy hover:bg-navy/90 text-gold text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm disabled:opacity-50"
+                >
+                  {creatingCategory ? 'Adding...' : 'Add'}
+                </button>
+              </form>
+
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate mb-2">Existing Categories</h4>
+                {categories.length === 0 ? (
+                  <p className="text-xs text-slate font-medium text-center py-4 bg-cream/20 rounded-xl">No categories found.</p>
+                ) : (
+                  categories.map(cat => (
+                    <div key={cat.id} className="flex justify-between items-center p-3 border border-border-cream/60 rounded-xl hover:bg-cream/10 transition-all">
+                      <span className="text-xs font-bold text-navy">{cat.name}</span>
+                      <button 
+                        onClick={() => handleDeleteCategory(cat.id)}
+                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        title="Delete Category"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
