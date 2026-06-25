@@ -40,6 +40,12 @@ const getHeaders = () => {
 const handleResponse = async (response) => {
   const data = await response.json();
   if (!response.ok) {
+    if (data.errors && typeof data.errors === 'object') {
+      const errorDetails = Object.entries(data.errors)
+        .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+        .join(' | ');
+      throw new Error(`${data.message}: ${errorDetails}`);
+    }
     throw new Error(data.message || 'Something went wrong');
   }
   return data.data; // The server wraps response data in a 'data' field

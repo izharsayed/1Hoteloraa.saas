@@ -7,7 +7,7 @@ function Vendors() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', contactPerson: '', phone: '', email: '', address: '', category: '' });
+  const [form, setForm] = useState({ name: '', contactName: '', phone: '', email: '', address: '', category: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -17,7 +17,7 @@ function Vendors() {
     try {
       setLoading(true);
       const res = await api.get('/vendors');
-      setVendors(res.data?.data || res.data || []);
+      setVendors(Array.isArray(res) ? res : res.data?.data || res.data || []);
     } catch (e) {
       setError('Failed to load vendors');
     } finally {
@@ -29,12 +29,19 @@ function Vendors() {
     e.preventDefault();
     try {
       setSaving(true);
-      await api.post('/vendors', form);
+      const payload = { ...form };
+      if (!payload.email) delete payload.email;
+      if (!payload.phone) delete payload.phone;
+      if (!payload.address) delete payload.address;
+      if (!payload.contactName) delete payload.contactName;
+      if (!payload.category) delete payload.category;
+
+      await api.post('/vendors', payload);
       setShowForm(false);
-      setForm({ name: '', contactPerson: '', phone: '', email: '', address: '', category: '' });
+      setForm({ name: '', contactName: '', phone: '', email: '', address: '', category: '' });
       fetchVendors();
     } catch (e) {
-      setError(e.response?.data?.message || 'Failed to save vendor');
+      setError(e.message || 'Failed to save vendor');
     } finally {
       setSaving(false);
     }
@@ -50,7 +57,7 @@ function Vendors() {
 
   const filtered = vendors.filter(v =>
     v.name?.toLowerCase().includes(search.toLowerCase()) ||
-    v.contactPerson?.toLowerCase().includes(search.toLowerCase())
+    v.contactName?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -93,7 +100,7 @@ function Vendors() {
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               { key: 'name', label: 'Vendor Name', required: true },
-              { key: 'contactPerson', label: 'Contact Person' },
+              { key: 'contactName', label: 'Contact Person' },
               { key: 'phone', label: 'Phone' },
               { key: 'email', label: 'Email' },
               { key: 'address', label: 'Address' },
@@ -156,7 +163,7 @@ function Vendors() {
                 </button>
               </div>
               <div className="space-y-1.5 text-xs text-slate">
-                {vendor.contactPerson && <p className="flex items-center gap-2"><span className="font-medium text-charcoal">{vendor.contactPerson}</span></p>}
+                {vendor.contactName && <p className="flex items-center gap-2"><span className="font-medium text-charcoal">{vendor.contactName}</span></p>}
                 {vendor.phone && <p className="flex items-center gap-2"><Phone className="w-3 h-3" />{vendor.phone}</p>}
                 {vendor.email && <p className="flex items-center gap-2"><Mail className="w-3 h-3" />{vendor.email}</p>}
                 {vendor.address && <p className="flex items-center gap-2"><MapPin className="w-3 h-3" />{vendor.address}</p>}

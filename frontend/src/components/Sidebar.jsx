@@ -73,8 +73,8 @@ function Sidebar({ collapsed, onToggle }) {
       items: [
         { name: 'Table Seating',    path: '/tables',   icon: UtensilsCrossed, module: 'tables' },
         { name: 'Kitchen KOT',      path: '/kitchen',  icon: ChefHat,         module: 'kot' },
-        { name: 'Orders',           path: '/billing',  icon: ClipboardList,   module: 'orders' },
-        { name: 'POS Menu Manager', path: '/menu',     icon: BookOpen,        module: 'pos' },
+        { name: 'POS Terminal',     path: '/orders',   icon: ClipboardList,   module: 'orders', roles: ['WAITER', 'MANAGER', 'TENANT_ADMIN', 'SUPER_ADMIN'] },
+        { name: 'POS Menu Manager', path: '/menu',     icon: BookOpen,        module: 'pos', roles: ['MANAGER', 'TENANT_ADMIN', 'SUPER_ADMIN'] },
         { name: 'POS Billing',      path: '/pos',      icon: Store,           module: 'pos' },
       ]
     },
@@ -117,7 +117,7 @@ function Sidebar({ collapsed, onToggle }) {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/login');
+    navigate('/login?loggedOut=1');
   };
 
   return (

@@ -26,7 +26,7 @@ function SuperAdminSidebar({ collapsed, onToggle }) {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/login');
+    navigate('/login?loggedOut=1');
   };
 
   return (

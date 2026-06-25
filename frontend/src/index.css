@@ -30,7 +30,7 @@
 @layer components {
   /* Premium luxury card style */
   .soft-card {
-    @apply bg-white border border-border-cream rounded-2xl transition-all duration-300;
+    @apply bg-white/40 backdrop-blur-md border border-border-cream rounded-2xl transition-all duration-300;
   }
   .soft-card:hover {
     @apply border-gold shadow-lg shadow-navy/5;
@@ -49,3 +49,21 @@
     @apply bg-white border border-border-cream text-charcoal hover:bg-surface-linen/50 active:scale-95 transition-all px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2;
   }
 }
+
+/* Explicit backdrop blur overrides to fix modal backdrop-filter in all browsers */
+.backdrop-blur-sm {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Make all modal backdrop overlays completely transparent and remove dark background overlays */
+.fixed.inset-0.backdrop-blur-sm {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+.backdrop-blur-md {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+

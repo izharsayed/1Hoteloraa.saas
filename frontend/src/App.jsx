@@ -24,6 +24,7 @@ import Tables from './pages/Tables.jsx';
 import Kitchen from './pages/Kitchen.jsx';
 import Menu from './pages/Menu.jsx';
 import Billing from './pages/Billing.jsx';
+import Orders from './pages/Orders.jsx';
 
 // Procurement Pages
 import Inventory from './pages/Inventory.jsx';
@@ -326,7 +327,7 @@ function App() {
             </Route>
 
             <Route element={<ProtectedRoute module="orders" />}>
-              <Route path="/orders" element={<Billing />} />
+              <Route path="/orders" element={<Orders />} />
             </Route>
 
             {/* --- Procurement --- */}

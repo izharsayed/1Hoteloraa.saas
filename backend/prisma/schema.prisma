@@ -187,6 +187,7 @@ model Tenant {
   roles         Role[]
   categories    Category[]
   notifications Notification[]
+  floors        Floor[]
 
   @@map("tenants")
 }
@@ -406,6 +407,18 @@ model Table {
   orders Order[]
 
   @@map("tables")
+}
+
+model Floor {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@map("floors")
 }
 
 // ============================================================
