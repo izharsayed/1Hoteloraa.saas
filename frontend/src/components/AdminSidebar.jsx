@@ -82,10 +82,16 @@ function AdminSidebar({ collapsed, onToggle }) {
               end={item.path === '/admin'}
               title={collapsed ? item.name : undefined}
               className={({ isActive }) => `
-                flex items-center gap-3 px-3 py-2 rounded-xl font-medium text-xs transition-all duration-200 group
+                flex items-center gap-3 font-medium text-xs transition-all duration-200 group
+                ${collapsed 
+                  ? 'w-10 h-10 justify-center rounded-xl mx-auto' 
+                  : 'px-3 py-2 rounded-xl hover:translate-x-1'
+                }
                 ${isActive 
-                  ? 'bg-gold-pale text-navy border-l-4 border-gold shadow-sm font-semibold' 
-                  : 'text-slate hover:bg-white/50 hover:text-navy'
+                  ? collapsed 
+                    ? 'bg-gold-pale text-navy shadow-sm' 
+                    : 'bg-gold-pale text-navy border-l-4 border-gold shadow-sm font-semibold'
+                  : 'text-slate hover:bg-gold-pale/50 hover:text-navy'
                 }
               `}
             >
