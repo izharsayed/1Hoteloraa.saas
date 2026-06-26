@@ -53,9 +53,8 @@ function CaptainLayout() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const handleLogout = async () => {
+    await api.logout();
     navigate('/login?loggedOut=1');
   };
 

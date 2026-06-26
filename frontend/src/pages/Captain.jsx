@@ -17,7 +17,7 @@ import {
   TrendingUp,
   XCircle
 } from 'lucide-react';
-import api from '../utils/api.js';
+import api, { assetUrl } from '../utils/api.js';
 
 function Captain() {
   const [activeTab, setActiveTab] = useState('pos'); // 'pos' | 'history'
@@ -437,7 +437,7 @@ function Captain() {
                     >
                       {item.imageUrl ? (
                         <img 
-                          src={item.imageUrl.startsWith('/uploads') ? `http://localhost:5000${item.imageUrl}` : item.imageUrl} 
+                          src={assetUrl(item.imageUrl)} 
                           alt={item.name}
                           className="w-16 h-16 rounded-lg object-cover border border-border-cream/50 group-hover:border-gold/30 shrink-0 self-center"
                         />

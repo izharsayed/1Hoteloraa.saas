@@ -28,6 +28,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { MODULE_ACCESS } from '../utils/permissions';
+import api from '../utils/api.js';
 
 function Sidebar({ collapsed, onToggle }) {
   const navigate = useNavigate();
@@ -114,9 +115,8 @@ function Sidebar({ collapsed, onToggle }) {
     }))
     .filter((group) => group.items.length > 0);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const handleLogout = async () => {
+    await api.logout();
     navigate('/login?loggedOut=1');
   };
 

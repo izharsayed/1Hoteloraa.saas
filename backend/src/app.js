@@ -60,7 +60,16 @@ if (_env2.default.nodeEnv === 'development') {
 }
 
 // ─── Static Files ─────────────────────────────────────────────
-app.use('/uploads', _express2.default.static(_path2.default.join(__dirname, '..', 'uploads')));
+app.use('/uploads', _express2.default.static(_path2.default.join(__dirname, '..', 'uploads'), {
+  dotfiles: 'deny',
+  fallthrough: false,
+  index: false,
+  immutable: true,
+  maxAge: '7d',
+  setHeaders: (res) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+  },
+}));
 
 // ─── API Routes ───────────────────────────────────────────────
 app.use('/api/v1', _index2.default);

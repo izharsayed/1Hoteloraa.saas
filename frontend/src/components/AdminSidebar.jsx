@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   ChevronLeft
 } from 'lucide-react';
+import api from '../utils/api.js';
 
 function AdminSidebar({ collapsed, onToggle }) {
   const navigate = useNavigate();
@@ -22,9 +23,8 @@ function AdminSidebar({ collapsed, onToggle }) {
     { name: 'Tenant Settings', path: '/admin/settings', icon: Settings },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const handleLogout = async () => {
+    await api.logout();
     navigate('/login?loggedOut=1');
   };
 
