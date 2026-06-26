@@ -332,7 +332,7 @@ function AdminOverview() {
         </div>
 
         {/* Quick Administrator Actions */}
-        <div className="soft-card p-6 bg-gradient-to-br from-navy via-navy/95 to-slate-900 text-white flex flex-col justify-between border border-gold/15 shadow-2xl shadow-navy/20">
+        <div className="soft-card p-6 bg-gradient-to-br from-navy via-navy/95 to-[#06101E] text-white flex flex-col justify-between border border-gold/15 shadow-2xl shadow-navy/20">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-[9px] bg-gold/20 text-gold font-mono font-bold uppercase tracking-wider px-2.5 py-1 border border-gold/30 rounded-lg">
