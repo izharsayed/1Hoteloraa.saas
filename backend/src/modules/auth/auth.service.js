@@ -63,13 +63,13 @@ const DEFAULT_FEATURES = {
   let user;
 
   if (dto.tenantSlug) {
-    tenant = await _database2.default.tenant.findUnique({ where: { slug: dto.tenantSlug }, select: { id: true, isActive: true, name: true, businessType: true } });
+    tenant = await _database2.default.tenant.findUnique({ where: { slug: dto.tenantSlug }, select: { id: true, isActive: true, name: true, businessType: true, address: true, city: true, state: true, country: true } });
     if (!tenant || !tenant.isActive) throw _errormiddleware.createError.call(void 0, 'Tenant not found or inactive', 404);
     user = await _database2.default.user.findFirst({ where: { tenantId: tenant.id, email: dto.email, isActive: true } });
   } else {
     user = await _database2.default.user.findFirst({
       where: { email: dto.email, isActive: true },
-      include: { tenant: { select: { id: true, isActive: true, name: true, businessType: true } } }
+      include: { tenant: { select: { id: true, isActive: true, name: true, businessType: true, address: true, city: true, state: true, country: true } } }
     });
     if (user && user.tenant) {
       tenant = user.tenant;
@@ -85,7 +85,7 @@ const DEFAULT_FEATURES = {
 
   const token = generateToken(user.id, tenant.id, user.email, user.userRole, _nullishCoalesce(user.roleId, () => ( undefined)));
   const { passwordHash: _, tenant: __, ...safeUser } = user ;
-  return { user: { ...safeUser, tenantName: tenant.name, businessType: tenant.businessType }, token };
+  return { user: { ...safeUser, tenantName: tenant.name, businessType: tenant.businessType, address: tenant.address, city: tenant.city, state: tenant.state, country: tenant.country }, token };
 }; exports.login = login;
 
  const changePassword = async (userId, dto) => {

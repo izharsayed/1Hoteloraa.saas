@@ -440,6 +440,9 @@ function ResetStep({ prefillToken, onBack, onSuccess }) {
 }
 
 // ─── Main Login Page ──────────────────────────────────────────────────────────
+import logo from '../assets/logo.png';
+import newLoginBg from '../assets/new_login_bg.png';
+
 function Login() {
   const navigate = useNavigate();
 
@@ -538,7 +541,7 @@ function Login() {
       {/* Premium Background Image */}
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 scale-105"
-        style={{ backgroundImage: "url('/new_login_bg.png')" }}
+        style={{ backgroundImage: `url(${newLoginBg})` }}
       />
       {/* Luxury Color Overlay for Contrast & Glassmorphism Blur */}
       <div className="absolute inset-0 z-0 bg-gradient-to-tr from-navy/60 via-navy/20 to-gold/25" />
@@ -562,7 +565,7 @@ function Login() {
         <div className="liquid-glass rounded-[2rem] p-8 md:p-10 shadow-2xl flex flex-col items-center">
 
           {/* Brand Header — always visible */}
-          <img src="/logo.png" alt="Hoteloraa Logo" className="h-16 w-auto object-contain mb-4 select-none" />
+          <img src={logo} alt="Hoteloraa Logo" className="h-16 w-auto object-contain mb-4 select-none" />
           <span className="px-3.5 py-0.5 border border-[#D4AF37]/40 text-[9px] font-bold text-[#D4AF37] rounded-full tracking-widest uppercase mb-4 bg-[#D4AF37]/10 select-none">
             Staff Portal
           </span>

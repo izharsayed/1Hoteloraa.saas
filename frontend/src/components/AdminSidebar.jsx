@@ -1,5 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import logoIcon from '../assets/logo-icon.png';
+import logo from '../assets/logo.png';
 import { 
   Shield, 
   Users, 
@@ -40,7 +42,7 @@ function AdminSidebar({ collapsed, onToggle }) {
       {collapsed ? (
         <div className="flex flex-col items-center py-4 border-b border-border-cream bg-white shrink-0 animate-fadeIn">
           <img 
-            src="/logo-icon.png" 
+            src={logoIcon} 
             alt="Hoteloraa Logo Icon" 
             className="h-8 w-auto object-contain cursor-pointer hover:scale-105 active:scale-95 transition-transform"
             onClick={onToggle}
