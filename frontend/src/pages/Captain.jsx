@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import api, { assetUrl } from '../utils/api.js';
 
+const dishImages = import.meta.glob('../assets/images/dishes/*.png', { eager: true, as: 'url' });
+
 function Captain() {
   const [activeTab, setActiveTab] = useState('pos'); // 'pos' | 'history'
   const [tables, setTables] = useState([]);
