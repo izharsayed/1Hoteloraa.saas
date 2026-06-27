@@ -17,7 +17,7 @@ import {
   TrendingUp,
   XCircle
 } from 'lucide-react';
-import api from '../utils/api.js';
+import api, { assetUrl } from '../utils/api.js';
 
 const dishImages = import.meta.glob('../assets/images/dishes/*.png', { eager: true, as: 'url' });
 
@@ -439,14 +439,7 @@ function Captain() {
                     >
                       {item.imageUrl ? (
                         <img 
-                          src={(() => {
-                            if (item.imageUrl.startsWith('/uploads')) return `http://localhost:5000${item.imageUrl}`;
-                            if (item.imageUrl.startsWith('/images/dishes/')) {
-                              const fileName = item.imageUrl.split('/').pop();
-                              return dishImages[`../assets/images/dishes/${fileName}`] || item.imageUrl;
-                            }
-                            return item.imageUrl;
-                          })()}
+                          src={assetUrl(item.imageUrl)} 
                           alt={item.name}
                           className="w-16 h-16 rounded-lg object-cover border border-border-cream/50 group-hover:border-gold/30 shrink-0 self-center"
                         />

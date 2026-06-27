@@ -17,7 +17,7 @@ import {
   TrendingUp,
   XCircle
 } from 'lucide-react';
-import api from '../utils/api.js';
+import api, { assetUrl } from '../utils/api.js';
 
 const dishImages = import.meta.glob('../assets/images/dishes/*.png', { eager: true, as: 'url' });
 

@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronLeft
 } from 'lucide-react';
+import api from '../utils/api.js';
 
 function SuperAdminSidebar({ collapsed, onToggle }) {
   const navigate = useNavigate();
@@ -25,9 +26,8 @@ function SuperAdminSidebar({ collapsed, onToggle }) {
     { name: 'System Audit Logs', path: '/superadmin/logs', icon: FileText },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const handleLogout = async () => {
+    await api.logout();
     navigate('/login?loggedOut=1');
   };
 
