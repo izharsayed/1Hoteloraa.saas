@@ -19,16 +19,16 @@ app.use(_helmet2.default.call(void 0, {
 }));
 app.use(_cors2.default.call(void 0, {
   origin: (origin, callback) => {
-    console.log('Incoming CORS origin:', origin);
     if (!origin) {
       callback(null, true);
       return;
     }
     
-    // Allow any port on localhost or 127.0.0.1 in development
-    const isLocal = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    const isLocalDev =
+      _env2.default.nodeEnv === 'development' &&
+      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
     
-    if (isLocal || origin === _env2.default.clientUrl) {
+    if (isLocalDev || origin === _env2.default.clientUrl) {
       callback(null, true);
     } else {
       callback(new Error(`Not allowed by CORS: ${origin}`));
@@ -36,7 +36,7 @@ app.use(_cors2.default.call(void 0, {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Id'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // ─── Rate Limiting ───────────────────────────────────────────
