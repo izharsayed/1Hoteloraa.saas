@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Sidebar from './components/Sidebar.jsx';
 import AccessDenied from './components/AccessDenied.jsx';
@@ -7,9 +7,11 @@ import api from './utils/api.js';
 
 // Core Pages
 import Login from './pages/Login.jsx';
+import VerifyEmail from './pages/VerifyEmail.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Reports from './pages/Reports.jsx';
 import Settings from './pages/Settings.jsx';
+import AttendanceEmployee from './pages/AttendanceEmployee.jsx';
 
 // Lodging Pages
 import Rooms from './pages/Rooms.jsx';
@@ -38,9 +40,9 @@ import AdminUsers from './pages/AdminUsers.jsx';
 import AdminRBAC from './pages/AdminRBAC.jsx';
 import AdminFeatures from './pages/AdminFeatures.jsx';
 import AdminSettings from './pages/AdminSettings.jsx';
+import AttendanceSettings from './pages/AttendanceSettings.jsx';
 
 // Captain Panel
-import CaptainLayout from './components/CaptainLayout.jsx';
 import Captain from './pages/Captain.jsx';
 
 // Super Admin Panel
@@ -54,6 +56,8 @@ import SuperAdminLogs from './pages/SuperAdminLogs.jsx';
 
 // Manager Panel
 import Manager from './pages/Manager.jsx';
+import AttendanceManager from './pages/AttendanceManager.jsx';
+import ShiftManagement from './pages/ShiftManagement.jsx';
 
 // Permissions utility
 import { MODULE_ACCESS } from './utils/permissions.js';
@@ -65,6 +69,7 @@ function DashboardLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed_manager') === 'true');
   const [notifications, setNotifications] = useState([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationRef = useRef(null);
 
   const userJson = localStorage.getItem('user');
   let user = { name: 'Staff Member', userRole: 'Staff' };
@@ -95,6 +100,19 @@ function DashboardLayout() {
       fetchNotifications();
     }, 7000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Handle click outside to close notifications
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setNotificationsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const handleMarkRead = async (id) => {
@@ -154,7 +172,7 @@ function DashboardLayout() {
           </div>
           <div className="flex items-center gap-3 md:gap-4">
             {/* Notification Bell */}
-            <div className="relative">
+            <div className="relative" ref={notificationRef}>
               <button 
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
                 className="p-2 text-slate hover:text-navy hover:bg-cream/40 rounded-xl transition-all relative flex items-center justify-center"
@@ -275,10 +293,11 @@ function ProtectedRoute({ allowedRoles, module: moduleKey }) {
 // --------------------------------------------------------------------------
 function App() {
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <BrowserRouter>
       <Routes>
         {/* ---- Auth ---- */}
         <Route path="/login" element={<Login />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
 
         {/* ========================================================
             OPERATIONAL STAFF SHELL — all tenant users except SUPER_ADMIN
@@ -294,6 +313,10 @@ function App() {
             {/* --- General --- */}
             <Route element={<ProtectedRoute module="dashboard" />}>
               <Route path="/" element={<Dashboard />} />
+            </Route>
+
+            <Route element={<ProtectedRoute module="attendance" />}>
+              <Route path="/attendance" element={<AttendanceEmployee />} />
             </Route>
 
             <Route element={<ProtectedRoute module="reports" />}>
@@ -360,6 +383,15 @@ function App() {
               <Route path="/manager" element={<Manager />} />
             </Route>
 
+            <Route element={<ProtectedRoute module="attendance_manager" />}>
+              <Route path="/attendance/manager" element={<AttendanceManager />} />
+              <Route path="/attendance/settings" element={<AttendanceSettings />} />
+            </Route>
+
+            <Route element={<ProtectedRoute module="shifts" />}>
+              <Route path="/shifts" element={<ShiftManagement />} />
+            </Route>
+
           </Route>
         </Route>
 
@@ -367,8 +399,9 @@ function App() {
             CAPTAIN PANEL — dedicated POS interface for captains
           */}
         <Route element={<ProtectedRoute allowedRoles={['CAPTAIN', 'TENANT_ADMIN', 'MANAGER']} />}>
-          <Route element={<CaptainLayout />}>
+          <Route element={<DashboardLayout />}>
             <Route path="/captain" element={<Captain />} />
+            <Route path="/captain/history" element={<Captain />} />
           </Route>
         </Route>
 
